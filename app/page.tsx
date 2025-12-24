@@ -81,6 +81,18 @@ export default async function Home() {
   const bottomStories = uniqueStories.slice(7); // All remaining stories
   const specialReportStory = uniqueStories[10] || uniqueStories[5];
 
+  // Find Fed/FOMC related market for the Fed Reserve widget
+  const fedKeywords = ['fed', 'fomc', 'federal reserve', 'rate cut', 'rate hike', 'interest rate', 'powell'];
+  const fedMarket = marketsData?.markets.find(m =>
+    fedKeywords.some(kw => m.question.toLowerCase().includes(kw))
+  );
+  const fedData = fedMarket ? {
+    action: fedMarket.yesPrice > 0.6 ? 'CUT' : fedMarket.yesPrice < 0.4 ? 'HOLD' : 'UNCERTAIN',
+    consensus: Math.round(Math.max(fedMarket.yesPrice, 1 - fedMarket.yesPrice) * 100),
+    description: fedMarket.question,
+    link: `https://polymarket.com/event/${fedMarket.slug}`
+  } : undefined;
+
   // Find highly contested markets (closest to 50/50) - DEDUPED
   const contestedSeen = new Set<string>();
   const contestedMarkets = [...uniqueStories]
@@ -96,6 +108,7 @@ export default async function Home() {
       volume: formatVol(m.volume24hr || 0),
       yesPercent: Math.round(m.yesPrice * 100),
       noPercent: Math.round((1 - m.yesPrice) * 100),
+      link: `https://polymarket.com/event/${m.slug}`,
     }));
 
   function formatVol(vol: number): string {
@@ -176,7 +189,7 @@ export default async function Home() {
 
         {/* Right Column (Approx 20%) */}
         <div className="md:col-span-3">
-          <RightSidebar techStory={techStoryProps} />
+          <RightSidebar techStory={techStoryProps} fedData={fedData} />
         </div>
 
       </main>

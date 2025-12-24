@@ -8,22 +8,36 @@ interface TechStory {
     link?: string;
 }
 
-interface RightSidebarProps {
-    techStory?: TechStory;
+interface FedData {
+    action: string;
+    consensus: number;
+    description: string;
+    link: string;
 }
 
-export function FedReserveWidget() {
+interface RightSidebarProps {
+    techStory?: TechStory;
+    fedData?: FedData;
+}
+
+export function FedReserveWidget({ fedData }: { fedData?: FedData }) {
+    // Default fallback if no Fed market data is available
+    const action = fedData?.action || 'HOLD';
+    const consensus = fedData?.consensus || 95;
+    const description = fedData?.description || 'Master of the Coin, Chairman Powell, is expected to hold the line. The market prices a near certainty of rates remaining steady.';
+    const link = fedData?.link || 'https://polymarket.com/markets/finance';
+
     return (
         <div className="bg-[#1a1a1a] text-[#d4af37] p-4 text-center mb-6 border-4 border-[#1a1a1a] outline outline-1 outline-[#d4af37] outline-offset-[-6px]">
             <h3 className="font-serif uppercase tracking-widest text-xs mb-1 text-[#d4af37]/80">The Federal Reserve</h3>
             <div className="border-t border-b border-[#d4af37]/30 py-4 my-2">
-                <div className="font-blackletter text-5xl mb-2">HOLD</div>
-                <div className="text-[10px] uppercase tracking-widest">Consensus 95%</div>
+                <div className="font-blackletter text-5xl mb-2">{action}</div>
+                <div className="text-[10px] uppercase tracking-widest">Consensus {consensus}%</div>
             </div>
-            <p className="text-[10px] font-serif leading-tight text-[#d4af37]/70">
-                Master of the Coin, Chairman Powell, is expected to hold the line. The market prices a near certainty of rates remaining steady.
+            <p className="text-[10px] font-serif leading-tight text-[#d4af37]/70 line-clamp-3">
+                {description}
             </p>
-            <a href="https://polymarket.com/markets/politics" target="_blank" rel="noopener noreferrer">
+            <a href={link} target="_blank" rel="noopener noreferrer">
                 <button className="mt-4 border border-[#d4af37] text-[10px] uppercase px-3 py-1 hover:bg-[#d4af37] hover:text-black transition">See Predictions</button>
             </a>
         </div>
@@ -84,10 +98,10 @@ export function SiliconChip({ story }: { story?: TechStory }) {
     )
 }
 
-export default function RightSidebar({ techStory }: RightSidebarProps) {
+export default function RightSidebar({ techStory, fedData }: RightSidebarProps) {
     return (
         <aside className="border-l border-black pl-4 pr-2 h-full">
-            <FedReserveWidget />
+            <FedReserveWidget fedData={fedData} />
             <DailyDispatch />
             <SiliconChip story={techStory} />
         </aside>

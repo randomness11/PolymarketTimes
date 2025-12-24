@@ -7,6 +7,7 @@ interface ContestedMarket {
     noPercent: number;
     yesLabel?: string;
     noLabel?: string;
+    link?: string;
 }
 
 interface FooterProps {
@@ -39,8 +40,15 @@ export default function Footer({ contestedMarkets }: FooterProps) {
                     {markets.map((market, idx) => (
                         <div key={idx} className="flex-1">
                             <div className="flex justify-between text-xs font-bold mb-1">
-                                <span>{market.title}</span>
-                                <span className="font-mono text-gray-500">Vol: {market.volume}</span>
+                                <a
+                                    href={market.link || '#'}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="hover:underline flex-1 mr-2"
+                                >
+                                    {market.title}
+                                </a>
+                                <span className="font-mono text-gray-500 whitespace-nowrap">Vol: {market.volume}</span>
                             </div>
                             <div className="h-4 bg-gray-300 w-full flex border border-black text-[9px] leading-4 text-white font-bold text-center">
                                 <div
