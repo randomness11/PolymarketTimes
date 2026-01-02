@@ -1,5 +1,5 @@
 import { Market, MarketCategory, MarketGroup, FrontPageBlueprint } from '../../types';
-import { Agent, createGroqClient, extractJSON, DEFAULT_AGENT_CONFIG, GROQ_MODELS } from '../lib/agents';
+import { Agent, createAIClient, extractJSON, withRetry, GEMINI_MODELS } from '../lib/agents';
 
 export interface CuratorInput {
     markets: Market[];
@@ -132,7 +132,7 @@ export class CuratorAgent implements Agent<CuratorInput, CuratorOutput> {
         console.log(`AI Curator: shortlisted ${candidateMarkets.length} diverse candidates.`);
 
         try {
-            const client = createGroqClient(this.apiKey);
+            const client = createAIClient(this.apiKey);
 
             const marketsList = candidateMarkets
                 .map((m, i) => formatMarketForAI(m, i + 1))
@@ -169,12 +169,14 @@ RESPONSE FORMAT (JSON ONLY):
   "reasoning": "Brief explanation."
 }`;
 
-            const response = await client.chat.completions.create({
-                model: GROQ_MODELS.SMART, // Llama 3.3 70B
-                messages: [{ role: 'user', content: curatorPrompt }],
-                temperature: 0.5,
-                max_tokens: 1000,
-            });
+            const response = await withRetry(async () => {
+                return client.chat.completions.create({
+                    model: GEMINI_MODELS.SMART, // Gemini 3 Flash
+                    messages: [{ role: 'user', content: curatorPrompt }],
+                    temperature: 0.5,
+                    max_tokens: 1000,
+                });
+            }, 2, 500);
 
             const content = response.choices[0]?.message?.content || '';
             const parsed = extractJSON<{

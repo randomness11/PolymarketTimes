@@ -92,7 +92,20 @@ export async function getMarkets(): Promise<MarketsResult> {
     });
 
   const maxVolume = Math.max(...rawMarkets.map(m => parseFloat(m.volume24hr || '0')));
-  const processedMarkets: Market[] = [];
+
+  // Phase 1: Pre-filter and parse markets (synchronous)
+  interface PreProcessedMarket {
+    raw: PolymarketMarket;
+    yesPrice: number;
+    noPrice: number;
+    volume24hr: number;
+    totalVolume: number;
+    liquidity: number;
+    category: MarketCategory;
+    outcomesArray: string[];
+  }
+
+  const preProcessed: PreProcessedMarket[] = [];
 
   for (const market of rawMarkets) {
     if (!market.outcomePrices || !market.outcomes) continue;
@@ -125,36 +138,55 @@ export async function getMarkets(): Promise<MarketsResult> {
       continue;
     }
 
-    const priceChange24h = await fetchPriceHistory(market.conditionId);
-
-    const money = normalizeVolume(volume24hr, maxVolume);
-    const certainty = calculateCertainty(yesPrice);
-    const speed = calculateSpeed(priceChange24h);
-    const interest = CATEGORY_INTEREST[category];
-
-    const total = (money * 0.35 + certainty * 0.35 + speed * 0.30) * interest;
-
-    const marketStatus = determineMarketStatus(yesPrice, priceChange24h);
-
-    processedMarkets.push({
-      id: market.conditionId,
-      question: market.question,
-      slug: market.slug,
-      description: market.description || '',
+    preProcessed.push({
+      raw: market,
       yesPrice,
       noPrice,
       volume24hr,
       totalVolume,
       liquidity,
-      priceChange24h,
-      outcomes: outcomesArray,
-      endDate: market.endDate || null,
-      image: market.image || null,
-      scores: { money, certainty, speed, interest, total },
       category,
-      marketStatus,
+      outcomesArray,
     });
   }
+
+  // Phase 2: Fetch all price histories in PARALLEL (major performance improvement)
+  const priceChanges = await Promise.all(
+    preProcessed.map(m => fetchPriceHistory(m.raw.conditionId))
+  );
+
+  // Phase 3: Complete scoring with fetched data
+  const processedMarkets: Market[] = preProcessed.map((market, index) => {
+    const priceChange24h = priceChanges[index];
+
+    const money = normalizeVolume(market.volume24hr, maxVolume);
+    const certainty = calculateCertainty(market.yesPrice);
+    const speed = calculateSpeed(priceChange24h);
+    const interest = CATEGORY_INTEREST[market.category];
+
+    const total = (money * 0.35 + certainty * 0.35 + speed * 0.30) * interest;
+
+    const marketStatus = determineMarketStatus(market.yesPrice, priceChange24h);
+
+    return {
+      id: market.raw.conditionId,
+      question: market.raw.question,
+      slug: market.raw.slug,
+      description: market.raw.description || '',
+      yesPrice: market.yesPrice,
+      noPrice: market.noPrice,
+      volume24hr: market.volume24hr,
+      totalVolume: market.totalVolume,
+      liquidity: market.liquidity,
+      priceChange24h,
+      outcomes: market.outcomesArray,
+      endDate: market.raw.endDate || null,
+      image: market.raw.image || null,
+      scores: { money, certainty, speed, interest, total },
+      category: market.category,
+      marketStatus,
+    };
+  });
 
   processedMarkets.sort((a, b) => b.scores.total - a.scores.total);
 

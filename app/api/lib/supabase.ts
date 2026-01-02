@@ -1,4 +1,33 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import type { EditorialData } from '../../types';
+
+// Type-safe row definitions for our Supabase tables
+export interface EditionRow {
+  date_str: string;
+  data: EditorialData;
+  created_at: string;
+}
+
+export interface EditionInsert {
+  date_str: string;
+  data: EditorialData;
+  created_at?: string;
+}
+
+export interface MarketHistoryRow {
+  id: string;
+  question: string;
+  last_shown: string;
+  last_odds: number;
+  show_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SubscriberRow {
+  email: string;
+  created_at: string;
+}
 
 // Lazy initialization to ensure env vars are loaded
 let supabaseInstance: SupabaseClient | null = null;
@@ -41,14 +70,3 @@ export function getSupabase(): SupabaseClient | null {
 
 // For backwards compatibility
 export const supabase = null; // Will be replaced by getSupabase() calls
-
-// Type for our market history table
-export interface MarketHistoryRow {
-  id: string;
-  question: string;
-  last_shown: string;
-  last_odds: number;
-  show_count: number;
-  created_at: string;
-  updated_at: string;
-}

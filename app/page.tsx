@@ -1,58 +1,51 @@
 import Header from './components/Header';
-import LeftSidebar from './components/LeftSidebar';
+import LeftSidebar, { MobileSidebar } from './components/LeftSidebar';
 import RightSidebar from './components/RightSidebar';
 import LeadStory from './components/LeadStory';
 import Footer from './components/Footer';
 import BottomGrid from './components/BottomGrid';
 import MarketTicker from './components/MarketTicker';
+import MainContentWrapper from './components/MainContentWrapper';
 import { getMarkets } from './api/markets/route';
 import { getEditorial } from './api/editorial/route';
 import { getCrypto } from './api/crypto/route';
 import { EditorialData } from './types';
 import { Metadata } from 'next';
+import { cache } from 'react';
 
 export const revalidate = 0; // Check for new edition on every visit (efficiently cached by DB)
 
-export async function generateMetadata(): Promise<Metadata> {
-  const editorialRes = await getMarkets().then(m =>
-    m.markets.length > 0 ? getEditorial(m.markets, m.groups) : null
-  );
+// Cached data fetching - prevents duplicate calls between generateMetadata and Home
+const getCachedMarkets = cache(async () => getMarkets().catch(() => null));
+const getCachedCrypto = cache(async () => getCrypto().catch(() => null));
 
-  if (editorialRes && !('error' in editorialRes)) {
-    const mainStoryId = editorialRes.blueprint.stories[0]?.id;
-    const headline = editorialRes.headlines[mainStoryId] || "Market Insights";
+export async function generateMetadata(): Promise<Metadata> {
+  const marketsData = await getCachedMarkets();
+  if (!marketsData || marketsData.markets.length === 0) {
     return {
-      title: `${headline} - The Polymarket Times`,
-      description: "Daily automated newspaper of prediction markets.",
+      title: "The Polymarket Times",
+      description: "Market insights and predictions.",
     };
   }
 
+  // Note: We don't call getEditorial here to avoid AI generation just for metadata
+  // The metadata will use a simpler fallback title
+  const mainMarket = marketsData.markets[0];
+  const headline = mainMarket?.question || "Market Insights";
   return {
-    title: "The Polymarket Times",
-    description: "Market insights and predictions.",
+    title: `${headline.slice(0, 50)}... - The Polymarket Times`,
+    description: "Daily automated newspaper of prediction markets.",
   };
 }
 
 export default async function Home() {
-  // Parallel data fetching
+  // Parallel data fetching with caching
   const [marketsData, cryptoData] = await Promise.all([
-    getMarkets(),
-    getCrypto()
+    getCachedMarkets(),
+    getCachedCrypto()
   ]);
 
-  // If markets fetched successfully, generate editorial
-  let editorialData: EditorialData | null = null;
-  if (marketsData && marketsData.markets.length > 0) {
-    const editRes = await getEditorial(marketsData.markets, marketsData.groups);
-    if (!('error' in editRes)) {
-      editorialData = editRes;
-    }
-  }
-
-  // Fallback if editorial fails?
-  // Ideally getEditorial returns a rigid structure or we handle nulls below.
-  // If null, we might show a maintenance page or empty state.
-  if (!editorialData) {
+  if (!marketsData || marketsData.markets.length === 0) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#f4f1ea] font-serif text-xl border-8 border-double border-black m-4 p-8">
         <div className="text-center">
@@ -63,8 +56,51 @@ export default async function Home() {
     );
   }
 
-  const { blueprint, content, headlines, datelines } = editorialData;
+  // Attempt to fetch editorial with a timeout
+  let editorialData: EditorialData | null = null;
+
+  try {
+    // Create a timeout promise that rejects after 120 seconds
+    // AI generation with Chief Editor can take 60-90 seconds for a full newspaper edition
+    const timeout = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error('Editorial timeout')), 120000);
+    });
+
+    if (process.env.NODE_ENV === 'development') console.log("Starting editorial generation...");
+    const editRes = await Promise.race([
+      getEditorial(marketsData.markets, marketsData.groups),
+      timeout
+    ]) as EditorialData | { error: string };
+
+    if (!('error' in editRes)) {
+      editorialData = editRes;
+      if (process.env.NODE_ENV === 'development') console.log("Editorial generation complete!");
+    }
+  } catch (e: any) {
+    if (process.env.NODE_ENV === 'development') console.warn("Editorial generation timed out or failed:", e.message);
+  }
+
+  // Fallback content if editorial fails or times out
+  const fallbackHeadlines: Record<string, string> = {};
+  const fallbackContent: Record<string, string> = {};
+  const fallbackDatelines: Record<string, string> = {};
+
+  // Create rough fallback data from raw markets if editorial is missing
+  marketsData.markets.forEach(m => {
+    fallbackHeadlines[m.id] = m.question;
+    fallbackContent[m.id] = m.description || "Details are scarce at this hour. The market speaks for itself.";
+    fallbackDatelines[m.id] = "Polymarket";
+  });
+
+  const blueprint = editorialData?.blueprint || { stories: marketsData.markets.slice(0, 15) };
+  const headlines = editorialData?.headlines || fallbackHeadlines;
+  const content = editorialData?.content || fallbackContent;
+  const datelines = editorialData?.datelines || fallbackDatelines;
+
+
+
   const stories = blueprint.stories;
+
 
   // Dedupe stories by ID first (in case curator returns duplicates)
   const seenIds = new Set<string>();
@@ -173,26 +209,31 @@ export default async function Home() {
   return (
     <div className="min-h-screen p-2 md:p-8 max-w-[1600px] mx-auto bg-[#f4f1ea] overflow-x-hidden">
       <MarketTicker markets={tickerMarkets} />
-      <Header cryptoPrices={cryptoData} timestamp={editorialData?.timestamp} />
+      <Header cryptoPrices={cryptoData || undefined} timestamp={editorialData?.timestamp} />
 
-      <main className="grid grid-cols-1 md:grid-cols-12 gap-8 border-b-4 border-double-thick border-black pb-8">
+      {/* Mobile-only collapsible sidebar */}
+      <MobileSidebar briefs={marketBriefs} specialReport={specialReportProps} />
 
-        {/* Left Column (Approx 20%) */}
-        <div className="md:col-span-2 hidden md:block">
-          <LeftSidebar briefs={marketBriefs} specialReport={specialReportProps} />
-        </div>
+      <MainContentWrapper>
+        <main className="grid grid-cols-1 md:grid-cols-12 gap-8 border-b-4 border-double-thick border-black pb-8">
 
-        {/* Center Column (Approx 60%) */}
-        <div className="md:col-span-7 border-r border-black pr-6">
-          <LeadStory {...leadStoryProps} />
-        </div>
+          {/* Left Column (Approx 20%) */}
+          <div className="md:col-span-2 hidden md:block">
+            <LeftSidebar briefs={marketBriefs} specialReport={specialReportProps} />
+          </div>
 
-        {/* Right Column (Approx 20%) */}
-        <div className="md:col-span-3">
-          <RightSidebar techStory={techStoryProps} fedData={fedData} />
-        </div>
+          {/* Center Column (Approx 60%) */}
+          <div className="md:col-span-7 border-r border-black pr-6">
+            <LeadStory {...leadStoryProps} />
+          </div>
 
-      </main>
+          {/* Right Column (Approx 20%) */}
+          <div className="md:col-span-3">
+            <RightSidebar techStory={techStoryProps} fedData={fedData} />
+          </div>
+
+        </main>
+      </MainContentWrapper>
 
       <BottomGrid stories={bottomGridProps} />
 

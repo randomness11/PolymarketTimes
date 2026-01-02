@@ -19,59 +19,56 @@ export interface AgentConfig {
 }
 
 /**
- * Creates an OpenAI client configured for Groq
+ * Creates an OpenAI client configured for Google Gemini
  */
-export function createGroqClient(apiKey: string): OpenAI {
+export function createAIClient(apiKey: string): OpenAI {
   return new OpenAI({
     apiKey,
-    baseURL: 'https://api.groq.com/openai/v1',
+    baseURL: 'https://generativelanguage.googleapis.com/v1beta/openai/',
   });
 }
 
 /**
- * Default agent configuration
+ * Gemini Model Constants
  */
-/**
- * Groq Model Constants
- */
-export const GROQ_MODELS = {
-  // Llama 3.3 70B: High intelligence, good reasoning, suitable for complex tasks
-  SMART: 'llama-3.3-70b-versatile',
-  // Llama 3.1 8B: Fast, efficient, good for simple tasks
-  FAST: 'llama-3.1-8b-instant',
-  // Mixtral 8x7B: Good balance of creativity and intelligence
-  CREATIVE: 'mixtral-8x7b-32768',
+export const GEMINI_MODELS = {
+  // Gemini 3 Flash: Fast, intelligent, supports search grounding
+  SMART: 'gemini-3-flash-preview',
+  FAST: 'gemini-3-flash-preview',
 } as const;
 
 /**
  * Default agent configuration
  */
 export const DEFAULT_AGENT_CONFIG = {
-  model: GROQ_MODELS.SMART,
+  model: GEMINI_MODELS.SMART,
   temperature: 0.75,
   maxTokens: 2000,
 } as const;
 
 /**
- * Extracts JSON from AI response (handles markdown code blocks)
+ * Extracts JSON from AI response (handles markdown code blocks and truncated responses)
  */
 export function extractJSON<T>(content: string): T {
   try {
-    // Try to find JSON in markdown code block first
-    const codeBlockMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);
+    // Try to find JSON in markdown code block first (handles truncated code blocks too)
+    const codeBlockMatch = content.match(/```(?:json)?\s*([\s\S]*?)(?:```|$)/);
     if (codeBlockMatch) {
       const jsonStr = codeBlockMatch[1].trim();
       return parseCleanedJSON<T>(jsonStr);
     }
 
-    // Otherwise look for raw JSON object
-    const jsonMatch = content.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
+    // Otherwise look for raw JSON object - find first { and try to parse from there
+    const firstBrace = content.indexOf('{');
+    if (firstBrace === -1) {
       console.error('No JSON found in response:', content.substring(0, 500));
       throw new Error('No JSON found in response');
     }
 
-    return parseCleanedJSON<T>(jsonMatch[0]);
+    // Extract from first brace to end
+    let jsonStr = content.substring(firstBrace);
+
+    return parseCleanedJSON<T>(jsonStr);
   } catch (error) {
     console.error('JSON parse error:', error);
     console.error('Content that failed to parse:', content.substring(0, 1000));
@@ -80,53 +77,94 @@ export function extractJSON<T>(content: string): T {
 }
 
 /**
- * Parse JSON with aggressive cleaning for LLM output
+ * Parse JSON with aggressive cleaning and repair for LLM output
  */
 function parseCleanedJSON<T>(jsonStr: string): T {
+  // Step 1: Try parsing as-is
   try {
-    // First try: parse as-is
     return JSON.parse(jsonStr);
   } catch (e) {
-    // Second try: clean up common issues
-    let cleaned = jsonStr
-      .replace(/,(\s*[}\]])/g, '$1') // Remove trailing commas
-      .replace(/\r/g, ''); // Remove carriage returns
+    // Continue to repair
+  }
 
-    try {
-      return JSON.parse(cleaned);
-    } catch (e2) {
-      // Third try: Fix unescaped newlines in strings
-      cleaned = cleaned.replace(/"([^"]*?)"/g, (match, p1) => {
-        return '"' + p1.replace(/\n/g, '\\n').replace(/\t/g, '\\t') + '"';
-      });
+  // Step 2: Clean common issues
+  let cleaned = jsonStr
+    .replace(/,(\s*[}\]])/g, '$1') // Remove trailing commas
+    .replace(/\r/g, '') // Remove carriage returns
+    .replace(/\n/g, '\\n'); // Escape newlines in the whole string first
 
-      try {
-        return JSON.parse(cleaned);
-      } catch (e3) {
-        // Fourth try: Handle truncated JSON (missing closing quote/brace)
-        // Count open braces and brackets
-        const openBraces = (cleaned.match(/{/g) || []).length;
-        const closeBraces = (cleaned.match(/}/g) || []).length;
+  try {
+    return JSON.parse(cleaned);
+  } catch (e2) {
+    // Continue to repair
+  }
 
-        // If there's unclosed content, try to close it
-        if (openBraces > closeBraces) {
-          // Check if there's an unclosed string (odd number of quotes in last line)
-          const lastLine = cleaned.split('\n').pop() || '';
-          const quoteCount = (lastLine.match(/"/g) || []).length;
+  // Step 3: Aggressive truncation repair
+  // Count braces to detect truncation
+  const openBraces = (cleaned.match(/{/g) || []).length;
+  const closeBraces = (cleaned.match(/}/g) || []).length;
 
-          if (quoteCount % 2 !== 0) {
-            cleaned += '"'; // Close the string
-          }
+  if (openBraces > closeBraces) {
+    // JSON is truncated - try to repair it
 
-          // Add missing closing braces
-          for (let i = 0; i < openBraces - closeBraces; i++) {
-            cleaned += '}';
-          }
+    // First, try to find the last complete key-value pair
+    // Pattern: ends with "..." or "...", 
+    const lastCompleteMatch = cleaned.match(/([\s\S]*"[^"]*"\s*:\s*"[^"]*")\s*,?\s*"[^"]*"?\s*:?\s*"?[^"}]*$/);
+
+    if (lastCompleteMatch) {
+      cleaned = lastCompleteMatch[1];
+    } else {
+      // Just trim to last complete-ish point
+      // Find last closing quote that looks complete
+      const lastQuote = cleaned.lastIndexOf('"');
+      if (lastQuote > 0) {
+        // Check if this looks like end of a value
+        const beforeQuote = cleaned.substring(0, lastQuote);
+        const lastColon = beforeQuote.lastIndexOf(':');
+        if (lastColon > 0) {
+          // Keep up to and including this quote
+          cleaned = cleaned.substring(0, lastQuote + 1);
         }
-
-        return JSON.parse(cleaned);
       }
     }
+
+    // Add missing closing braces
+    const newOpenBraces = (cleaned.match(/{/g) || []).length;
+    const newCloseBraces = (cleaned.match(/}/g) || []).length;
+    for (let i = 0; i < newOpenBraces - newCloseBraces; i++) {
+      cleaned += '}';
+    }
+  }
+
+  try {
+    return JSON.parse(cleaned);
+  } catch (e3) {
+    // Step 4: Nuclear option - extract what we can
+
+    // For Curator agent: try to extract selectedIndices array
+    const indicesMatch = jsonStr.match(/"selectedIndices"\s*:\s*\[([^\]]*)/);
+    if (indicesMatch) {
+      const indices = indicesMatch[1].split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n));
+      if (indices.length > 0) {
+        console.log(`Recovered ${indices.length} indices from truncated Curator JSON`);
+        return { selectedIndices: indices, reasoning: 'Recovered from truncated response' } as T;
+      }
+    }
+
+    // For Headline/Article agents: extract key-value pairs  
+    const pairs: Record<string, string> = {};
+    const pairRegex = /"(\d+|[^"]+)"\s*:\s*"([^"]*)"/g;
+    let match;
+    while ((match = pairRegex.exec(jsonStr)) !== null) {
+      pairs[match[1]] = match[2];
+    }
+
+    if (Object.keys(pairs).length > 0) {
+      console.log(`Recovered ${Object.keys(pairs).length} items from truncated JSON`);
+      return pairs as T;
+    }
+
+    throw new Error('Could not parse JSON even after repair attempts');
   }
 }
 

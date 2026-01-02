@@ -1,5 +1,5 @@
 import { Market, FrontPageBlueprint, MarketGroup, Headlines, Datelines, ArticleContent } from '../../types';
-import { Agent, createGroqClient, extractJSON, GROQ_MODELS } from '../lib/agents';
+import { Agent, createAIClient, extractJSON, withRetry, GEMINI_MODELS } from '../lib/agents';
 
 export interface ArticleWriterInput {
     blueprint: FrontPageBlueprint;
@@ -62,11 +62,12 @@ export function generateDateline(market: Market): string {
     return `${location} (${dateStr})`;
 }
 
+// TODO: In the future, use groupInfo to display multi-outcome markets
+// e.g., "Trump 65%, Harris 32%, RFK 3%" instead of just the primary market
 function formatMarketForJournalist(
     market: Market,
     headline: string,
-    dateline: string,
-    groupInfo?: MarketGroup
+    dateline: string
 ): string {
     const yesWinning = market.yesPrice > 0.5;
     const leadingOutcome = yesWinning ? market.outcomes[0] : market.outcomes[1];
@@ -101,10 +102,9 @@ export class ArticleWriterAgent implements Agent<ArticleWriterInput, ArticleWrit
         const allSections = stories.map((market, index) => {
             const headline = headlines[market.id] || market.question;
             const dateline = datelines[market.id] || generateDateline(market);
-            const groupInfo = groupByMarketId?.get(market.id);
 
             // Format with description for AI context
-            const baseText = formatMarketForJournalist(market, headline, dateline, groupInfo);
+            const baseText = formatMarketForJournalist(market, headline, dateline);
             const contextText = market.description
                 ? `\nCONTEXT/DESCRIPTION: "${market.description.replace(/\n/g, ' ').substring(0, 300)}..."`
                 : '';
@@ -127,73 +127,80 @@ export class ArticleWriterAgent implements Agent<ArticleWriterInput, ArticleWrit
 
         console.log(`Article Writer: Processing ${stories.length} stories in ${batches.length} batches...`);
 
-        const client = createGroqClient(this.apiKey);
+        const client = createAIClient(this.apiKey);
         const finalContent: ArticleContent = {};
         let finalEditorialNote = "The future is unevenly distributed.";
 
         await Promise.all(batches.map(async (batch, batchIdx) => {
-            const batchPrompt = `You are a senior investigative journalist at "The Polymarket Times".
-Write a news brief (60-100 words) for EACH item below.
+            // Stagger batch starts to avoid rate limits
+            await new Promise(resolve => setTimeout(resolve, batchIdx * 200));
 
-DATA:
-${batch.map(s => `--- ITEM ${s.id} ---\n${s.text}`).join('\n\n')}
+            // Build simplified input for Gemini
+            const batchInput = batch.map((s, localIdx) => {
+                const globalIdx = batchIdx * BATCH_SIZE + localIdx;
+                return `[${globalIdx}] ${s.text}`;
+            }).join('\n\n---\n\n');
 
----
+            const batchPrompt = `You are a senior investigative journalist at "The Polymarket Times" — a prestigious newspaper that covers prediction markets as breaking news.
 
-GUIDELINES:
-1. **LEAD WITH THE NEWS**: Your first sentence must answer: "What is happening and why does it matter?"
-   - BAD: "The market for TikTok's sale is active."
-   - GOOD: "ByteDance is under mounting pressure to divest TikTok as US national security concerns reach a boiling point."
+Write a compelling news brief (80-120 words) for EACH story below.
 
-2. **TRANSLATE ODDS INTO NARRATIVE** (never quote raw numbers):
-   - BAD: "The odds are 81%."
-   - GOOD: "A sale appears all but certain."
-   - GOOD: "Traders are bracing for impact."
+═══════════════════════════════════════════════════════════
+STORIES TO COVER:
+═══════════════════════════════════════════════════════════
+${batchInput}
 
-3. **ADD REAL-WORLD CONTEXT**:
-   - WHO are the key players? (e.g., "Trump", "ByteDance CEO Shou Zi Chew")
-   - WHAT are the stakes? (e.g., "150 million US users could lose access")
-   - WHEN is the deadline? (e.g., "The January 19th divestiture deadline looms")
+═══════════════════════════════════════════════════════════
+WRITING GUIDELINES:
+═══════════════════════════════════════════════════════════
+1. **LEAD WITH THE NEWS**: First sentence answers "What happened and why does it matter?"
+2. **TRANSLATE ODDS INTO NARRATIVE**: 
+   - 90%+ → "all but certain", "inevitable"
+   - 70-90% → "highly likely", "strong momentum"  
+   - 50-70% → "edge", "slight advantage", "contested"
+   - <50% → "uphill battle", "long odds", "slim chance"
+3. **ADD CONTEXT**: Who are the key players? What are the stakes? What's the timeline?
+4. **TONE**: Like The Economist meets Financial Times. Authoritative, witty, slightly sardonic.
 
-4. **STRUCTURE** (60-100 words):
-   - Sentence 1: The news (what's happening)
-   - Sentence 2-3: Context (why it matters, who's involved)
-   - Sentence 4: The odds translation (how confident are traders?)
-
-5. **TONE**: "Professional Future-Retro". Serious, literary, high-stakes. Like The Economist.
-
-FORMAT:
-   - Returns JSON object where keys are the **ITEM MARKET IDs** (e.g. "0x123...").
-
+═══════════════════════════════════════════════════════════
+RESPOND WITH JSON ONLY (keys are story numbers):
+═══════════════════════════════════════════════════════════
 {
-  "market_id_1": "Content...",
-  "market_id_2": "Content..."
+  "0": "Your article for story 0...",
+  "1": "Your article for story 1...",
+  ...
 }`;
 
             try {
-                const response = await client.chat.completions.create({
-                    model: GROQ_MODELS.SMART,
-                    messages: [{ role: 'user', content: batchPrompt }],
-                    temperature: 0.75,
-                    max_tokens: 4000,
-                });
+                const response = await withRetry(async () => {
+                    return client.chat.completions.create({
+                        model: GEMINI_MODELS.SMART,
+                        messages: [{ role: 'user', content: batchPrompt }],
+                        temperature: 0.75,
+                        max_tokens: 4000,
+                    });
+                }, 2, 500);
 
                 const contentText = response.choices[0]?.message?.content || "";
-                const parsed = extractJSON<Record<string, string>>(contentText);
+                console.log(`Article Batch ${batchIdx} RAW:`, contentText.substring(0, 500)); // Debug
 
-                // Merge results
-                batch.forEach(item => {
-                    if (parsed[item.id]) {
-                        finalContent[item.id] = parsed[item.id];
+                const parsed = extractJSON<Record<string, string>>(contentText);
+                console.log(`Article Batch ${batchIdx} KEYS:`, Object.keys(parsed)); // Debug
+
+                // Merge results using global index mapping
+                batch.forEach((item, localIdx) => {
+                    const globalIdx = batchIdx * BATCH_SIZE + localIdx;
+                    const content = parsed[String(globalIdx)] || parsed[item.id];
+
+                    if (content) {
+                        finalContent[item.id] = content;
                     } else {
-                        // try to find by index if ID failed (fallback)
-                        // but prompt asks for ID. Let's stick to ID.
-                        // Fallback logic
+                        // Fallback with more informative content
                         const story = stories.find(s => s.id === item.id);
                         if (story) {
-                            const dateline = datelines[story.id] || generateDateline(story);
                             const odds = Math.round(Math.max(story.yesPrice, story.noPrice) * 100);
-                            finalContent[story.id] = `${dateline} — Developments continue to unfold as speculators remain watchful. The outcome remains uncertain.`;
+                            const outcome = story.yesPrice > 0.5 ? 'YES' : 'NO';
+                            finalContent[story.id] = `Markets are pricing this outcome at ${odds}% ${outcome}. Traders remain watchful as developments unfold. The stakes are significant, and the outcome could reshape expectations across related markets.`;
                         }
                     }
                 });
@@ -208,7 +215,8 @@ FORMAT:
                 batch.forEach(item => {
                     const story = stories.find(s => s.id === item.id);
                     if (story) {
-                        finalContent[story.id] = `Data unavailable for ${story.question}`;
+                        const odds = Math.round(Math.max(story.yesPrice, story.noPrice) * 100);
+                        finalContent[story.id] = `Breaking developments in this market. Current odds stand at ${odds}%. Analysis pending as our correspondents gather more information.`;
                     }
                 });
             }

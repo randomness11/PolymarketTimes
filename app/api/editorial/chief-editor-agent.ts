@@ -1,5 +1,5 @@
 import type { Agent } from '../lib/agents';
-import { createGroqClient, DEFAULT_AGENT_CONFIG, extractJSON, withRetry, GROQ_MODELS } from '../lib/agents';
+import { createAIClient, extractJSON, withRetry, GEMINI_MODELS } from '../lib/agents';
 import type { FrontPageBlueprint, ArticleContent } from '../../types';
 
 interface ChiefEditorInput {
@@ -14,19 +14,18 @@ interface ChiefEditorOutput {
 }
 
 export class ChiefEditorAgent implements Agent<ChiefEditorInput, ChiefEditorOutput> {
-    private client: ReturnType<typeof createGroqClient>;
+    private client: ReturnType<typeof createAIClient>;
 
     constructor(apiKey: string) {
-        this.client = createGroqClient(apiKey);
+        this.client = createAIClient(apiKey);
     }
 
     async call(input: ChiefEditorInput): Promise<ChiefEditorOutput> {
         const { blueprint, content } = input;
 
-        // Prepare items for batching
         const marketIds = Object.keys(content);
-        const BATCH_SIZE = 3;
-        const batches = [];
+        const BATCH_SIZE = 4; // Slightly larger batches, simpler prompt
+        const batches: string[][] = [];
 
         for (let i = 0; i < marketIds.length; i += BATCH_SIZE) {
             batches.push(marketIds.slice(i, i + BATCH_SIZE));
@@ -37,95 +36,75 @@ export class ChiefEditorAgent implements Agent<ChiefEditorInput, ChiefEditorOutp
         const finalReviewedContent: ArticleContent = {};
         const allNotes: string[] = [];
 
+        // Process batches in parallel with staggered delays to avoid rate limits
         await Promise.all(batches.map(async (batchIds, batchIdx) => {
-            // Construct mini-blueprint and mini-content for this batch
-            const batchBlueprintStories = blueprint.stories.filter(s => batchIds.includes(s.id));
+            // Stagger batch starts to reduce concurrent requests
+            await new Promise(resolve => setTimeout(resolve, batchIdx * 200));
+
             const batchContent: ArticleContent = {};
             batchIds.forEach(id => {
                 batchContent[id] = content[id];
             });
 
-            const prompt = `
-You are the Editor-in-Chief of "The Polymarket Times", a prestigious newspaper from the future.
-Your job is to review the articles written by your staff writers.
+            // Simplified prompt - less tokens, clearer instructions
+            const prompt = `ROLE: Editor-in-Chief, "The Polymarket Times".
 
-The newspaper's style is:
-- **Professional Future-Retro**: Like The Economist wrote for The Financial Times in 2100.
-- **Data-Backed**: Odds are facts.
-- **Serious**: No crypto slang, no memes.
+TASK: Polish these drafts. Fix tone issues, verify numbers match the data.
 
-YOUR TASK:
-1. **FACT-CHECK**:
-   - Does the article misquote the odds? FIX IT.
-   - Does it invent a name or event not in the data? REMOVE IT.
-   - STICK TO THE FACTS.
+TONE GUIDE:
+- Professional, like The Economist
+- Replace casual phrases ("So yeah...") with authoritative ones ("The ledger suggests...")
+- Numbers should be narratively woven, not stated bluntly
 
-2. **TONE POLISH**:
-   - TOO CASUAL: "So yeah, the market thinks..." → FIX: "The ledger suggests..."
-   - TOO ROBOTIC: "Probability is 60%." → FIX: "A narrow majority of speculators..."
+RULES:
+1. Return ALL keys provided - never drop any
+2. If content is good, return it unchanged
+3. Keep edits minimal - polish, don't rewrite
 
-3. **EXAMPLES OF GOOD VS BAD**:
-   - BAD: "This could potentially maybe happen."
-   - GOOD: "The outcome hangs in the balance."
-   - BAD: "Volume is $500K."
-   - GOOD: "Half a million dollars flows through the prediction market."
-
-4. **DO NOT DELETE STORIES**: Even if boring, you MUST return it. Just polish it.
-   - INPUT keys length MUST EQUAL OUTPUT keys length.
-
-OUTPUT JSON FORMAT (CRITICAL - MUST BE VALID JSON):
-{
-  "reviewedContent": {
-    "market_id_1": "Fixed content...",
-    "market_id_2": "Fixed content...",
-    ... (Must match ALL input keys)
-  },
-  "status": "approved" | "revised",
-  "notes": "Brief summary."
-}
-
-IMPORTANT: 
-- You MUST return content for EVERY key provided in the INPUT.
-- Do not change the keys (Market IDs).
-- If the content is good, return it EXACTLY as provided with status "approved".
-- If you make edits, return the FIXED content.
-- **NEVER** return fewer items than you received.
-
-BLUEPRINT (The Facts):
-${JSON.stringify({ stories: batchBlueprintStories }, null, 2)}
-
-DRAFT CONTENT (To Review):
+DRAFTS:
 ${JSON.stringify(batchContent, null, 2)}
-    `;
+
+RESPOND WITH JSON ONLY:
+{
+  "reviewed": {
+    "${batchIds[0]}": "polished text...",
+    ...
+  }
+}`;
 
             try {
-                const response = await this.client.chat.completions.create({
-                    messages: [{ role: 'user', content: prompt }],
-                    model: GROQ_MODELS.SMART,
-                    temperature: 0.3,
-                    max_tokens: 4000,
-                });
+                const response = await withRetry(async () => {
+                    return this.client.chat.completions.create({
+                        messages: [{ role: 'user', content: prompt }],
+                        model: GEMINI_MODELS.SMART,
+                        temperature: 0.25,
+                        max_tokens: 2000,
+                    });
+                }, 2, 500);
 
                 const contentResponse = response.choices[0]?.message?.content || '{}';
-                const parsed = extractJSON<Partial<ChiefEditorOutput>>(contentResponse);
+                const parsed = extractJSON<{ reviewed?: ArticleContent }>(contentResponse);
 
-                const reviewedBatch = parsed.reviewedContent || batchContent;
+                const reviewedBatch = parsed.reviewed || batchContent;
 
-                // Merge back
-                Object.assign(finalReviewedContent, reviewedBatch);
-                if (parsed.notes) allNotes.push(parsed.notes);
+                // Merge back, ensuring all keys exist
+                batchIds.forEach(id => {
+                    finalReviewedContent[id] = reviewedBatch[id] || batchContent[id];
+                });
+
+                console.log(`Chief Editor Batch ${batchIdx}: reviewed ${batchIds.length} articles`);
 
             } catch (error) {
-                console.error(`Chief Editor Batch ${batchIdx} failed:`, error);
-                // Fallback: use original content
+                console.error(`Chief Editor Batch ${batchIdx} failed after retries:`, error);
+                // Fallback: use original content for this batch
                 batchIds.forEach(id => {
                     finalReviewedContent[id] = content[id];
                 });
-                allNotes.push(`Batch ${batchIdx} failed review.`);
+                allNotes.push(`Batch ${batchIdx} used original content.`);
             }
         }));
 
-        // Safety check: ensure we have everything
+        // Final safety check
         marketIds.forEach(id => {
             if (!finalReviewedContent[id]) {
                 finalReviewedContent[id] = content[id];
@@ -134,8 +113,8 @@ ${JSON.stringify(batchContent, null, 2)}
 
         return {
             reviewedContent: finalReviewedContent,
-            status: 'approved', // Aggregate status is hard, default to approved
-            notes: allNotes.join(' | ')
+            status: allNotes.length > 0 ? 'revised' : 'approved',
+            notes: allNotes.length > 0 ? allNotes.join(' | ') : 'All batches reviewed successfully.'
         };
     }
 }

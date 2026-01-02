@@ -1,4 +1,6 @@
-import React from 'react';
+'use client';
+
+import React, { useState } from 'react';
 
 // Shared type (can move to a centralized type file later)
 interface MarketBrief {
@@ -19,6 +21,42 @@ interface LeftSidebarProps {
     specialReport?: SidebarStory;
 }
 
+// Mobile sidebar toggle for small screens
+export function MobileSidebar({ briefs = [], specialReport }: LeftSidebarProps) {
+    const [isOpen, setIsOpen] = useState(false);
+
+    return (
+        <div className="md:hidden">
+            {/* Toggle Button */}
+            <button
+                onClick={() => setIsOpen(!isOpen)}
+                className="w-full border-2 border-black py-2 px-4 text-sm font-bold uppercase tracking-wider bg-gray-100 hover:bg-black hover:text-white transition-colors flex items-center justify-center gap-2"
+            >
+                <svg className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+                {isOpen ? 'Hide Market Briefs' : 'View Market Briefs'}
+            </button>
+
+            {/* Collapsible Content */}
+            <div className={`overflow-hidden transition-all duration-300 ${isOpen ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0'}`}>
+                <div className="border-x-2 border-b-2 border-black p-4 bg-[#f4f1ea]">
+                    <MarketBriefs briefs={briefs} />
+
+                    {specialReport && (
+                        <div className="mt-4 pt-4 border-t border-black">
+                            <a href={specialReport.link || "#"} target="_blank" rel="noopener noreferrer" className="block hover:opacity-90 transition-opacity">
+                                <h3 className="font-display font-bold text-lg leading-none mb-1 hover:underline">{specialReport.headline}</h3>
+                            </a>
+                            <div className="text-[10px] uppercase font-bold mb-2 tracking-wider">— A Special Report —</div>
+                            <p className="font-serif text-sm text-justify leading-tight line-clamp-3">{specialReport.description}</p>
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+}
 export function MarketBriefs({ briefs }: { briefs: MarketBrief[] }) {
     return (
         <div className="mb-8 border-b-2 border-black pb-4">

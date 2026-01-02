@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
-import { recordMarketShown } from '../lib/market-history';
+import { recordMarketsShown } from '../lib/market-history';
 import { CuratorAgent } from './curator-agent';
 import { HeadlineWriterAgent } from './headline-agent';
 import { ArticleWriterAgent, generateDateline } from './article-agent';
 import { ChiefEditorAgent } from './chief-editor-agent';
-import { getSupabase } from '../lib/supabase';
+import { getSupabase, EditionInsert } from '../lib/supabase';
 import { EditorialData, Market, MarketGroup, Datelines, FrontPageBlueprint } from '../../types';
 
 export const revalidate = 0; // Disable Vercel cache since we manage it via Supabase
@@ -54,10 +54,10 @@ export async function getEditorial(markets: Market[], groups: MarketGroup[] = []
     console.log(`CACHE MISS: Generating fresh edition for ${hourlyKey}`);
   }
 
-  if (!process.env.GROQ_API_KEY) {
-    throw new Error('GROQ_API_KEY not configured');
+  if (!process.env.GEMINI_API_KEY) {
+    throw new Error('GEMINI_API_KEY not configured');
   }
-  const apiKey = process.env.GROQ_API_KEY;
+  const apiKey = process.env.GEMINI_API_KEY;
 
   console.log(`Editorial: received ${markets.length} markets`);
 
@@ -98,13 +98,14 @@ export async function getEditorial(markets: Market[], groups: MarketGroup[] = []
   });
 
   // 5. EDITOR-IN-CHIEF AGENT: Review and Polish
+  console.log('=== CHIEF EDITOR AGENT ===');
   const editorAgent = new ChiefEditorAgent(apiKey);
   const { reviewedContent, notes } = await editorAgent.call({
     blueprint,
     content,
   });
-
   const finalContent = reviewedContent;
+  console.log(`Chief Editor notes: ${notes}`);
 
   // Construct final response
   const response: EditorialData = {
@@ -113,19 +114,21 @@ export async function getEditorial(markets: Market[], groups: MarketGroup[] = []
     headlines,
     datelines,
     curatorReasoning: reasoning,
-    editorNotes: editorialNote,
+    editorNotes: notes,
     timestamp: new Date().toISOString(),
   };
 
   // 6. SAVE TO DB (Cache) - Skip in development to avoid stale data
   if (supabase && !isDev) {
+    const insertData = {
+      date_str: hourlyKey,
+      data: response,
+      created_at: new Date().toISOString()
+    } satisfies EditionInsert;
+
     const { error } = await supabase
       .from('editions')
-      .upsert({
-        date_str: hourlyKey,
-        data: response as any, // Cast to any to avoid strict JSON type issues
-        created_at: new Date().toISOString()
-      }, { onConflict: 'date_str' }); // Ensure we just update if it raced
+      .upsert(insertData, { onConflict: 'date_str' }); // Ensure we just update if it raced
 
     if (error) {
       console.error('Failed to save edition to DB:', error);
@@ -137,10 +140,16 @@ export async function getEditorial(markets: Market[], groups: MarketGroup[] = []
   }
 
   // Record shown history (background)
-  const shownMarkets = blueprint.stories;
-  Promise.all(
-    shownMarkets.map(market => recordMarketShown(market.id, market.question, market.yesPrice))
-  ).catch(err => console.error('History record error:', err));
+  // Use batched recording to prevent connection timeouts/stack overflows
+  const shownMarkets = blueprint.stories.map(m => ({
+    id: m.id,
+    question: m.question,
+    currentOdds: m.yesPrice
+  }));
+
+  // Fire and forget, but catch errors
+  recordMarketsShown(shownMarkets)
+    .catch(err => console.error('History record error:', err));
 
   return response;
 }

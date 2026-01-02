@@ -20,14 +20,14 @@ interface MarketHistoryEntry {
 async function clearOldHistory(): Promise<void> {
   const supabase = getSupabase();
   if (!supabase) return;
-  
+
   const oneHourAgo = new Date(Date.now() - HOUR_MS).toISOString();
-  
+
   const { error } = await supabase
     .from('market_history')
     .delete()
     .lt('last_shown', oneHourAgo);
-  
+
   if (error) {
     console.error('Error clearing old history:', error);
   }
@@ -48,22 +48,55 @@ function getCurrentEditionTime(): Date {
 async function isNewEdition(): Promise<boolean> {
   const supabase = getSupabase();
   if (!supabase) return true;
-  
+
   const { data, error } = await supabase
     .from('market_history')
     .select('last_shown')
     .order('last_shown', { ascending: false })
     .limit(1)
     .single();
-  
+
   if (error || !data) return true;
-  
+
   const lastShownHour = new Date(data.last_shown);
   lastShownHour.setMinutes(0, 0, 0);
-  
+
   const currentHour = getCurrentEditionTime();
-  
+
   return lastShownHour.getTime() !== currentHour.getTime();
+}
+
+/**
+ * Record multiple markets shown in this edition (Batch optimized)
+ */
+export async function recordMarketsShown(
+  markets: { id: string; question: string; currentOdds: number }[]
+): Promise<void> {
+  const supabase = getSupabase();
+  if (!supabase) return;
+
+  // Clear old data if we're in a new hour (check once)
+  if (await isNewEdition()) {
+    console.log('New edition detected - clearing old history');
+    await clearOldHistory();
+  }
+
+  const payload = markets.map(m => ({
+    id: m.id,
+    question: m.question,
+    last_shown: new Date().toISOString(),
+    last_odds: m.currentOdds,
+    show_count: 1,
+    updated_at: new Date().toISOString(),
+  }));
+
+  const { error } = await supabase
+    .from('market_history')
+    .upsert(payload, { onConflict: 'id' });
+
+  if (error) {
+    console.error('Error batch recording markets:', error);
+  }
 }
 
 /**
@@ -74,35 +107,7 @@ export async function recordMarketShown(
   question: string,
   currentOdds: number
 ): Promise<void> {
-  const supabase = getSupabase();
-  if (!supabase) {
-    console.log('Supabase not configured - skipping history recording');
-    return;
-  }
-  
-  // Clear old data if we're in a new hour
-  const newEdition = await isNewEdition();
-  if (newEdition) {
-    console.log('New edition detected - clearing old history');
-    await clearOldHistory();
-  }
-  
-  const { error } = await supabase
-    .from('market_history')
-    .upsert({
-      id: marketId,
-      question,
-      last_shown: new Date().toISOString(),
-      last_odds: currentOdds,
-      show_count: 1,
-      updated_at: new Date().toISOString(),
-    }, {
-      onConflict: 'id',
-    });
-  
-  if (error) {
-    console.error('Error recording market:', error);
-  }
+  return recordMarketsShown([{ id: marketId, question, currentOdds: currentOdds }]);
 }
 
 /**
@@ -111,16 +116,16 @@ export async function recordMarketShown(
 export async function getCurrentEditionMarkets(): Promise<MarketHistoryEntry[]> {
   const supabase = getSupabase();
   if (!supabase) return [];
-  
+
   const oneHourAgo = new Date(Date.now() - HOUR_MS).toISOString();
-  
+
   const { data, error } = await supabase
     .from('market_history')
     .select('*')
     .gte('last_shown', oneHourAgo);
-  
+
   if (error || !data) return [];
-  
+
   return data.map(row => ({
     id: row.id,
     question: row.question,
@@ -136,12 +141,12 @@ export async function getCurrentEditionMarkets(): Promise<MarketHistoryEntry[]> 
 export async function clearAllHistory(): Promise<void> {
   const supabase = getSupabase();
   if (!supabase) return;
-  
+
   const { error } = await supabase
     .from('market_history')
     .delete()
     .neq('id', ''); // Delete all rows
-  
+
   if (error) {
     console.error('Error clearing all history:', error);
   }
