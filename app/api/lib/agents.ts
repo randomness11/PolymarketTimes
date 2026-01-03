@@ -141,22 +141,30 @@ function parseCleanedJSON<T>(jsonStr: string): T {
   } catch (e3) {
     // Step 4: Nuclear option - extract what we can
 
-    // For Curator agent: try to extract selectedIndices array
-    const indicesMatch = jsonStr.match(/"selectedIndices"\s*:\s*\[([^\]]*)/);
-    if (indicesMatch) {
-      const indices = indicesMatch[1].split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n));
-      if (indices.length > 0) {
-        console.log(`Recovered ${indices.length} indices from truncated Curator JSON`);
-        return { selectedIndices: indices, reasoning: 'Recovered from truncated response' } as T;
-      }
+    // For Curator agent: try to extract selectedIndices array (NEW OBJECT FORMAT)
+    // Matches { "index": 1, "layout": "..." }
+    const indicesRegex = /{\s*"index"\s*:\s*(\d+)/g;
+    let indexMatch;
+    const items = [];
+    while ((indexMatch = indicesRegex.exec(jsonStr)) !== null) {
+      items.push(parseInt(indexMatch[1]));
     }
 
-    // For Headline/Article agents: extract key-value pairs  
+    if (items.length > 0) {
+      // We lost layout info in this nuclear recovery, but at least we have the stories
+      console.log(`Recovered ${items.length} indices from truncated Curator JSON`);
+      // We have to mock the object structure expected by new curator agent
+      const recoveredIndices = items.map(i => ({ index: i, layout: 'BRIEF' }));
+      return { selectedIndices: recoveredIndices, reasoning: 'Recovered from truncated response' } as T;
+    }
+
+    // For Headline/Article agents: extract key-value pairs 
+    // FIXED REGEX: Handles escaped quotes in values: "key": "val \"ue\""
     const pairs: Record<string, string> = {};
-    const pairRegex = /"(\d+|[^"]+)"\s*:\s*"([^"]*)"/g;
+    const pairRegex = /"(\d+|[^"]+)"\s*:\s*"((?:[^"\\]|\\.)*)"/g;
     let match;
     while ((match = pairRegex.exec(jsonStr)) !== null) {
-      pairs[match[1]] = match[2];
+      pairs[match[1]] = match[2].replace(/\\"/g, '"'); // Unescape quotes
     }
 
     if (Object.keys(pairs).length > 0) {

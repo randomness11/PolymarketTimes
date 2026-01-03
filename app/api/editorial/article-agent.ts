@@ -1,4 +1,4 @@
-import { Market, FrontPageBlueprint, MarketGroup, Headlines, Datelines, ArticleContent } from '../../types';
+import { Market, FrontPageBlueprint, MarketGroup, Headlines, Datelines, ArticleContent, Story } from '../../types';
 import { Agent, createAIClient, extractJSON, withRetry, GEMINI_MODELS } from '../lib/agents';
 
 export interface ArticleWriterInput {
@@ -109,12 +109,16 @@ export class ArticleWriterAgent implements Agent<ArticleWriterInput, ArticleWrit
                 ? `\nCONTEXT/DESCRIPTION: "${market.description.replace(/\n/g, ' ').substring(0, 300)}..."`
                 : '';
 
+            const layoutInstruction = `\nLAYOUT TYPE: ${market.layout} (Length: ${market.layout === 'LEAD_STORY' ? '250 words'
+                : market.layout === 'FEATURE' ? '150 words'
+                    : '60 words'})`;
+
             if (index < 3) console.log(`Debug Context [${market.id}]:`, contextText);
 
             return {
                 id: market.id,
                 index,
-                text: baseText + contextText
+                text: baseText + contextText + layoutInstruction
             };
         });
 
@@ -160,7 +164,11 @@ WRITING GUIDELINES:
    - 50-70% → "edge", "slight advantage", "contested"
    - <50% → "uphill battle", "long odds", "slim chance"
 3. **ADD CONTEXT**: Who are the key players? What are the stakes? What's the timeline?
-4. **TONE**: Like The Economist meets Financial Times. Authoritative, witty, slightly sardonic.
+4. **LAYOUT ROLES**:
+   - **LEAD_STORY**: "Voice of God" tone. Synthesize stakes, history, and global impact. 250 words.
+   - **FEATURE**: Analytical. connect the dots. 150 words.
+   - **BRIEF**: Punchy, factual. "Just the facts". 60 words.
+5. **TONE**: Like The Economist meets Financial Times. Authoritative, witty, slightly sardonic.
 
 ═══════════════════════════════════════════════════════════
 RESPOND WITH JSON ONLY (keys are story numbers):

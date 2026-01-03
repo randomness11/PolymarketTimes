@@ -1,4 +1,4 @@
-import { Market, MarketCategory, MarketGroup, FrontPageBlueprint } from '../../types';
+import { Market, MarketCategory, MarketGroup, FrontPageBlueprint, Story, StoryLayout } from '../../types';
 import { Agent, createAIClient, extractJSON, withRetry, GEMINI_MODELS } from '../lib/agents';
 
 export interface CuratorInput {
@@ -164,8 +164,11 @@ INSTRUCTIONS:
 
 RESPONSE FORMAT (JSON ONLY):
 {
-  "selectedIndices": [1, 5, 12, ...],
-  "leadStoryIndex": 1,
+  "selectedIndices": [
+     { "index": 1, "layout": "LEAD_STORY" },
+     { "index": 5, "layout": "FEATURE" },
+     { "index": 12, "layout": "BRIEF" }
+  ],
   "reasoning": "Brief explanation."
 }`;
 
@@ -180,61 +183,67 @@ RESPONSE FORMAT (JSON ONLY):
 
             const content = response.choices[0]?.message?.content || '';
             const parsed = extractJSON<{
-                selectedIndices: number[];
-                leadStoryIndex?: number;
+                selectedIndices: { index: number; layout: StoryLayout }[];
                 reasoning: string;
             }>(content);
 
-            const selectedIndices = parsed.selectedIndices || [];
+            const selectedItems = parsed.selectedIndices || [];
 
-            // Map back to markets
-            let selectedMarkets = selectedIndices
-                .map(idx => candidateMarkets[idx - 1])
-                .filter(Boolean);
-
-            // Ensure Lead Story is first if specified
-            if (parsed.leadStoryIndex) {
-                const lead = candidateMarkets[parsed.leadStoryIndex - 1];
-                if (lead) {
-                    selectedMarkets = selectedMarkets.filter(m => m.id !== lead.id);
-                    selectedMarkets.unshift(lead);
-                }
-            }
+            // Map back to markets and assign layout
+            let selectedStories: Story[] = selectedItems
+                .map(item => {
+                    const market = candidateMarkets[item.index - 1];
+                    if (!market) return null;
+                    return {
+                        ...market,
+                        layout: item.layout || 'BRIEF'
+                    } as Story;
+                })
+                .filter((s): s is Story => s !== null);
 
             // Deduplicate (Critical Step)
             const seenIds = new Set<string>();
-            const uniqueSelected: Market[] = [];
+            const uniqueSelected: Story[] = [];
 
             // Prioritize what AI selected, but drop duplicates
-            for (const m of selectedMarkets) {
-                if (!seenIds.has(m.id)) {
-                    seenIds.add(m.id);
-                    uniqueSelected.push(m);
+            for (const s of selectedStories) {
+                if (!seenIds.has(s.id)) {
+                    seenIds.add(s.id);
+                    uniqueSelected.push(s);
                 }
             }
-            selectedMarkets = uniqueSelected;
+            selectedStories = uniqueSelected;
 
             // Fallback: fill to 35 if AI under-selected (deduplicated)
-            if (selectedMarkets.length < 35) {
-                const remaining = candidateMarkets.filter(m => !seenIds.has(m.id));
+            if (selectedStories.length < 35) {
+                const remaining = candidateMarkets
+                    .filter(m => !seenIds.has(m.id))
+                    .map(m => ({ ...m, layout: 'BRIEF' as StoryLayout })); // Default to BRIEF for fallback
+
                 // Fill up to 35 if possible
-                selectedMarkets = [...selectedMarkets, ...remaining].slice(0, 35);
+                selectedStories = [...selectedStories, ...remaining].slice(0, 35);
             }
 
             // Cap at 40 max just in case
-            selectedMarkets = selectedMarkets.slice(0, 40);
+            selectedStories = selectedStories.slice(0, 40);
 
-            console.log(`AI Curator selected ${selectedMarkets.length} stories. Reasoning: ${parsed.reasoning}`);
+            console.log(`AI Curator selected ${selectedStories.length} stories. Reasoning: ${parsed.reasoning}`);
 
             return {
-                blueprint: { stories: selectedMarkets },
+                blueprint: { stories: selectedStories },
                 reasoning: parsed.reasoning || 'AI selection'
             };
 
         } catch (error) {
             console.error('AI Curator failed, using fallback', error);
+            // Fallback logic
+            const fallbackStories = candidateMarkets.slice(0, 35).map((m, i) => ({
+                ...m,
+                layout: i === 0 ? 'LEAD_STORY' : (i < 6 ? 'FEATURE' : 'BRIEF')
+            } as Story));
+
             return {
-                blueprint: { stories: candidateMarkets.slice(0, 35) },
+                blueprint: { stories: fallbackStories },
                 reasoning: 'Fallback: Top stratified candidates'
             };
         }

@@ -96,7 +96,8 @@ RULES:
 1. If odds >70%, write as FACT: "TRUMP WINS" not "Will Trump win"
 2. MAX 6 WORDS. Active voice. NO questions.
 3. ALL CAPS. No hedging words (could/may/might).
-4. NEVER start with "WILL" - always declarative.
+4. AVOID HYPERBOLE: Don't use "SKYROCKETS" or "PLUMMETS" unless >10% move.
+5. NEVER start with "WILL" - always declarative.
 
 JSON ONLY:
 {
@@ -111,7 +112,7 @@ JSON ONLY:
                         model: GEMINI_MODELS.SMART,
                         messages: [{ role: 'user', content: prompt }],
                         temperature: 0.8,
-                        max_tokens: 500,
+                        max_tokens: 1000,
                     });
                 }, 2, 500);
 

@@ -56,8 +56,14 @@ export interface MarketGroup {
     isMultiOutcome: boolean;
 }
 
+export type StoryLayout = 'LEAD_STORY' | 'FEATURE' | 'BRIEF';
+
+export interface Story extends Market {
+    layout: StoryLayout;
+}
+
 export interface FrontPageBlueprint {
-    stories: Market[];
+    stories: Story[];
 }
 
 export interface Headlines {

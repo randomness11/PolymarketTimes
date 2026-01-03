@@ -24,7 +24,7 @@ export class ChiefEditorAgent implements Agent<ChiefEditorInput, ChiefEditorOutp
         const { blueprint, content } = input;
 
         const marketIds = Object.keys(content);
-        const BATCH_SIZE = 4; // Slightly larger batches, simpler prompt
+        const BATCH_SIZE = 2; // Reduced from 4 to prevent truncation with longer articles
         const batches: string[][] = [];
 
         for (let i = 0; i < marketIds.length; i += BATCH_SIZE) {
@@ -57,9 +57,10 @@ TONE GUIDE:
 - Numbers should be narratively woven, not stated bluntly
 
 RULES:
-1. Return ALL keys provided - never drop any
-2. If content is good, return it unchanged
-3. Keep edits minimal - polish, don't rewrite
+1. FACT CHECK: Verify odds/numbers against the provided drafts.
+2. TONE CONSISTENCY: Ensure authoritative voice throughout.
+3. Return ALL keys provided - never drop any.
+4. Keep edits minimal - polish, don't rewrite entire articles unless tone is off.
 
 DRAFTS:
 ${JSON.stringify(batchContent, null, 2)}
@@ -78,7 +79,7 @@ RESPOND WITH JSON ONLY:
                         messages: [{ role: 'user', content: prompt }],
                         model: GEMINI_MODELS.SMART,
                         temperature: 0.25,
-                        max_tokens: 2000,
+                        max_tokens: 4000,
                     });
                 }, 2, 500);
 

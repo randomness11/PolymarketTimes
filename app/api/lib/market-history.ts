@@ -1,6 +1,6 @@
 import { getSupabase } from './supabase';
 
-const HOUR_MS = 60 * 60 * 1000; // 1 hour in milliseconds
+const EDITION_DURATION_MS = 4 * 60 * 60 * 1000; // 4 hours in milliseconds
 
 interface MarketHistoryEntry {
   id: string;
@@ -21,12 +21,12 @@ async function clearOldHistory(): Promise<void> {
   const supabase = getSupabase();
   if (!supabase) return;
 
-  const oneHourAgo = new Date(Date.now() - HOUR_MS).toISOString();
+  const oneIntervalAgo = new Date(Date.now() - EDITION_DURATION_MS).toISOString();
 
   const { error } = await supabase
     .from('market_history')
     .delete()
-    .lt('last_shown', oneHourAgo);
+    .lt('last_shown', oneIntervalAgo);
 
   if (error) {
     console.error('Error clearing old history:', error);
@@ -34,11 +34,15 @@ async function clearOldHistory(): Promise<void> {
 }
 
 /**
- * Get the current edition's timestamp (rounded to the hour)
+ * Get the current edition's timestamp (rounded to the 4-hour block)
  */
 function getCurrentEditionTime(): Date {
   const now = new Date();
-  now.setMinutes(0, 0, 0); // Round down to current hour
+  const currentHour = now.getHours();
+  // Round down to nearest 4-hour block (0, 4, 8, 12, 16, 20)
+  const startHour = Math.floor(currentHour / 4) * 4;
+
+  now.setHours(startHour, 0, 0, 0);
   return now;
 }
 
@@ -117,12 +121,12 @@ export async function getCurrentEditionMarkets(): Promise<MarketHistoryEntry[]> 
   const supabase = getSupabase();
   if (!supabase) return [];
 
-  const oneHourAgo = new Date(Date.now() - HOUR_MS).toISOString();
+  const oneIntervalAgo = new Date(Date.now() - EDITION_DURATION_MS).toISOString();
 
   const { data, error } = await supabase
     .from('market_history')
     .select('*')
-    .gte('last_shown', oneHourAgo);
+    .gte('last_shown', oneIntervalAgo);
 
   if (error || !data) return [];
 

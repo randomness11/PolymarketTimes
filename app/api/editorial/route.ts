@@ -18,8 +18,15 @@ export async function getEditorial(markets: Market[], groups: MarketGroup[] = []
   const supabase = getSupabase();
   const today = new Date();
 
-  // Cache Keys: Hourly (YYYY-MM-DDTHH) and Daily baseline (YYYY-MM-DD)
-  const hourlyKey = today.toISOString().slice(0, 13); // e.g., "2025-12-22T14"
+  // Cache Keys: 4-Hour Block (YYYY-MM-DDTHH) and Daily baseline
+  // Calculate 4-hour block timestamp for the cache key
+  const currentHour = today.getHours();
+  const blockStartHour = Math.floor(currentHour / 4) * 4;
+  const blockDate = new Date(today);
+  blockDate.setHours(blockStartHour, 0, 0, 0);
+
+  // Format: YYYY-MM-DDTHH (where HH is 00, 04, 08, 12, 16, 20)
+  const editionKey = blockDate.toISOString().slice(0, 13);
   const dailyKey = today.toISOString().slice(0, 10);  // e.g., "2025-12-22"
 
   const isDev = process.env.NODE_ENV === 'development';
@@ -29,11 +36,11 @@ export async function getEditorial(markets: Market[], groups: MarketGroup[] = []
     const { data: hourlyEdition } = await supabase
       .from('editions')
       .select('data')
-      .eq('date_str', hourlyKey)
+      .eq('date_str', editionKey)
       .single();
 
     if (hourlyEdition?.data) {
-      console.log(`CACHE HIT (hourly): Returning edition for ${hourlyKey}`);
+      console.log(`CACHE HIT (hourly): Returning edition for ${editionKey}`);
       return hourlyEdition.data as EditorialData;
     }
 
@@ -51,7 +58,7 @@ export async function getEditorial(markets: Market[], groups: MarketGroup[] = []
       // The hourly edition will be saved for subsequent users
     }
 
-    console.log(`CACHE MISS: Generating fresh edition for ${hourlyKey}`);
+    console.log(`CACHE MISS: Generating fresh edition for ${editionKey}`);
   }
 
   if (!process.env.GEMINI_API_KEY) {
@@ -121,7 +128,7 @@ export async function getEditorial(markets: Market[], groups: MarketGroup[] = []
   // 6. SAVE TO DB (Cache) - Skip in development to avoid stale data
   if (supabase && !isDev) {
     const insertData = {
-      date_str: hourlyKey,
+      date_str: editionKey,
       data: response,
       created_at: new Date().toISOString()
     } satisfies EditionInsert;
@@ -133,7 +140,7 @@ export async function getEditorial(markets: Market[], groups: MarketGroup[] = []
     if (error) {
       console.error('Failed to save edition to DB:', error);
     } else {
-      console.log(`Successfully saved hourly edition for ${hourlyKey}`);
+      console.log(`Successfully saved hourly edition for ${editionKey}`);
     }
   } else if (isDev) {
     console.log('DEV MODE: Skipping cache save');
