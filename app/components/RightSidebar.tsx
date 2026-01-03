@@ -84,6 +84,34 @@ function OnThisDay() {
 
 import SubscribeWidget from './SubscribeWidget';
 
+import Link from 'next/link';
+
+export function TokenAd() {
+    return (
+        <div className="border-4 border-black p-4 mb-6 text-center bg-[#f4f1ea] relative overflow-hidden group hover:bg-[#e6e2d8] transition-colors">
+            <div className="absolute top-0 left-0 w-full h-1 bg-black"></div>
+            <div className="absolute bottom-0 left-0 w-full h-1 bg-black"></div>
+
+            <h3 className="font-serif font-bold text-xl uppercase mb-2">Notice to Readers</h3>
+            <p className="font-serif text-sm italic mb-4">
+                The Polymarket Times is proud to announce the minting of its official digital currency.
+            </p>
+
+            <div className="border border-black p-2 mb-4 inline-block transform rotate-1 group-hover:rotate-0 transition-transform">
+                <span className="font-blackletter text-4xl">$TIMES</span>
+            </div>
+
+            <p className="text-[10px] uppercase tracking-widest mb-4">
+                "The Currency of Truth"
+            </p>
+
+            <Link href="/token" className="block w-full bg-black text-[#f4f1ea] py-2 font-bold uppercase text-xs hover:bg-red-800 transition-colors">
+                Acquire Now
+            </Link>
+        </div>
+    );
+}
+
 export function DailyDispatch() {
     return <SubscribeWidget />;
 }
@@ -128,6 +156,7 @@ export default function RightSidebar({ techStory, fedData }: RightSidebarProps) 
     return (
         <aside className="border-l border-black pl-4 pr-2 h-full">
             <FedReserveWidget fedData={fedData} />
+            <TokenAd />
             <DailyDispatch />
             <SiliconChip story={techStory} />
         </aside>

@@ -35,7 +35,12 @@ export default function Header({ cryptoPrices, timestamp }: HeaderProps) {
             <div className={`flex justify-between items-center py-1 border-b border-black text-xs font-bold font-serif tracking-widest px-2 transition-all duration-300 ${isScrolled ? 'py-0.5 text-[10px]' : ''}`}>
                 <div>VOL. CXXVII... No. 42,109</div>
                 <div>NEW YORK, {currentDate}</div>
-                <div>PRICE ONE DOLLAR ($1.00)</div>
+                <div className="flex gap-4 items-center">
+                    <a href="/token" className="bg-[#b91c1c] text-[#f4f1ea] px-3 py-1 hover:bg-black transition-colors animate-pulse font-black uppercase tracking-widest border border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-y-[1px] hover:shadow-[1px_1px_0px_0px_rgba(0,0,0,1)] text-[10px] md:text-xs no-underline">
+                        🚨 BUY $TIMES 🚨
+                    </a>
+                    <div>PRICE ONE DOLLAR ($1.00)</div>
+                </div>
             </div>
 
             {/* Main Masthead Area */}
