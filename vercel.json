@@ -1,3 +1,1 @@
-{
-    "_comment": "Cron jobs now handled by GitHub Actions (see .github/workflows/)"
-}
+{}
