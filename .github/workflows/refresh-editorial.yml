@@ -1,0 +1,17 @@
+name: Refresh Editorial
+
+on:
+  schedule:
+    # Every 4 hours (6x/day instead of Vercel's 2x/day limit)
+    - cron: '0 */4 * * *'
+  workflow_dispatch: # Allow manual triggers
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Editorial Refresh
+        run: |
+          curl -X GET "${{ secrets.VERCEL_URL }}/api/cron/refresh-editorial" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -f -s -S -o /dev/null -w "HTTP Status: %{http_code}\n"

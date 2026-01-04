@@ -1,0 +1,17 @@
+name: Monitor Markets
+
+on:
+  schedule:
+    # Every 10 minutes (144x/day - way over Vercel's limit!)
+    - cron: '*/10 * * * *'
+  workflow_dispatch: # Allow manual triggers
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Market Monitoring
+        run: |
+          curl -X GET "${{ secrets.VERCEL_URL }}/api/monitor" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -f -s -S -o /dev/null -w "HTTP Status: %{http_code}\n"
