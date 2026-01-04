@@ -7,6 +7,29 @@
 }
 
 @layer base {
+  /* Responsive font scaling */
+  html {
+    font-size: 14px;
+  }
+
+  @media (min-width: 640px) {
+    html {
+      font-size: 15px;
+    }
+  }
+
+  @media (min-width: 768px) {
+    html {
+      font-size: 16px;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    html {
+      font-size: 16px;
+    }
+  }
+
   body {
     background-color: #f4f1ea;
     color: #1a1a1a;
@@ -25,6 +48,19 @@
   h6 {
     font-family: var(--font-playfair), serif;
     font-weight: 700;
+  }
+
+  /* Micro-interactions */
+  button {
+    transition: all 0.2s ease;
+  }
+
+  button:active {
+    transform: scale(0.98);
+  }
+
+  a {
+    transition: all 0.15s ease;
   }
 }
 
@@ -100,4 +136,335 @@
 
 .animate-fade-in {
   animation: fade-in 1s ease-out forwards;
+}
+
+/* Success State Animations */
+@keyframes success-reveal {
+  0% {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-success-reveal {
+  animation: success-reveal 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+}
+
+@keyframes checkmark-circle {
+  0% {
+    stroke-dashoffset: 166;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes checkmark-check {
+  0% {
+    stroke-dashoffset: 48;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+.success-checkmark {
+  display: inline-block;
+}
+
+.success-checkmark .checkmark-circle {
+  stroke: #16a34a;
+  stroke-width: 2;
+  stroke-miterlimit: 10;
+  stroke-dasharray: 166;
+  stroke-dashoffset: 166;
+  animation: checkmark-circle 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+}
+
+.success-checkmark .checkmark-check {
+  stroke: #16a34a;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 48;
+  stroke-dashoffset: 48;
+  animation: checkmark-check 0.3s 0.4s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+}
+
+/* Micro-interactions - Card Lifts */
+@keyframes card-lift {
+  0% {
+    transform: translateY(0) scale(1);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  }
+  100% {
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+  }
+}
+
+.card-lift-on-hover {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card-lift-on-hover:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+}
+
+/* Ornamental border draw-in animation */
+@keyframes border-draw {
+  0% {
+    stroke-dashoffset: 1000;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* Image reveal effects */
+@keyframes image-zoom {
+  0% {
+    transform: scale(1);
+    filter: grayscale(100%) contrast(125%);
+  }
+  100% {
+    transform: scale(1.05);
+    filter: grayscale(0%) contrast(100%);
+  }
+}
+
+.image-zoom-on-hover {
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.image-zoom-on-hover:hover {
+  transform: scale(1.05);
+  filter: grayscale(0%) contrast(100%);
+}
+
+/* Ticker item pulse on hover */
+@keyframes pulse-glow {
+  0%, 100% {
+    background-color: rgba(0, 0, 0, 1);
+  }
+  50% {
+    background-color: rgba(26, 26, 26, 1);
+  }
+}
+
+/* Ink spread for drop caps */
+@keyframes drop-cap-ink {
+  0% {
+    opacity: 0;
+    transform: scale(0.5) rotate(-5deg);
+    filter: blur(4px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+    filter: blur(0);
+  }
+}
+
+.drop-cap-animated {
+  animation: drop-cap-ink 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+}
+
+/* Button press feedback */
+@keyframes button-press {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(0.95);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.button-press-active:active {
+  animation: button-press 0.2s ease;
+}
+
+/* Link underline slide effect */
+.link-underline-slide {
+  position: relative;
+  text-decoration: none;
+}
+
+.link-underline-slide::after {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 2px;
+  bottom: -2px;
+  left: 0;
+  background-color: currentColor;
+  transition: width 0.3s ease;
+}
+
+.link-underline-slide:hover::after {
+  width: 100%;
+}
+
+/* Readable Mode Accessibility Styles */
+.readable-mode {
+  /* Increase base font sizes */
+  --readable-scale: 1.25;
+}
+
+.readable-mode body {
+  font-size: calc(1rem * var(--readable-scale));
+  line-height: 1.8;
+}
+
+.readable-mode h1 {
+  font-size: calc(2.5rem * var(--readable-scale));
+  line-height: 1.3;
+  margin-bottom: 1rem;
+}
+
+.readable-mode h2 {
+  font-size: calc(2rem * var(--readable-scale));
+  line-height: 1.3;
+  margin-bottom: 0.75rem;
+}
+
+.readable-mode h3 {
+  font-size: calc(1.5rem * var(--readable-scale));
+  line-height: 1.4;
+  margin-bottom: 0.5rem;
+}
+
+.readable-mode h4,
+.readable-mode h5,
+.readable-mode h6 {
+  font-size: calc(1.25rem * var(--readable-scale));
+  line-height: 1.4;
+}
+
+.readable-mode p,
+.readable-mode article,
+.readable-mode .font-serif {
+  font-size: calc(1rem * var(--readable-scale));
+  line-height: 1.8;
+  margin-bottom: 1rem;
+}
+
+/* Reduce ornamentation in readable mode */
+.readable-mode .font-blackletter {
+  font-family: var(--font-playfair), serif;
+  font-weight: 700;
+}
+
+/* Improve contrast */
+.readable-mode {
+  --foreground: #000000;
+  --background: #ffffff;
+}
+
+.readable-mode body {
+  background-color: #ffffff;
+  color: #000000;
+  background-image: none;
+}
+
+/* Simplify borders */
+.readable-mode .border-double-thick {
+  border-style: solid;
+  border-width: 2px;
+}
+
+/* Increase button and link sizes */
+.readable-mode button,
+.readable-mode a {
+  font-size: calc(1rem * var(--readable-scale));
+  padding: 0.5rem 1rem;
+}
+
+/* Improve input readability */
+.readable-mode input,
+.readable-mode textarea {
+  font-size: calc(1rem * var(--readable-scale));
+  padding: 0.75rem;
+  line-height: 1.6;
+}
+
+/* Disable some decorative effects */
+.readable-mode img {
+  filter: none !important;
+}
+
+.readable-mode .grayscale {
+  filter: none !important;
+}
+
+/* Mobile Optimizations */
+@media (max-width: 768px) {
+  /* Larger touch targets on mobile */
+  button,
+  a {
+    min-height: 44px;
+    min-width: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Better mobile typography */
+  h1 {
+    font-size: 2rem;
+    line-height: 1.2;
+  }
+
+  h2 {
+    font-size: 1.5rem;
+    line-height: 1.3;
+  }
+
+  h3 {
+    font-size: 1.25rem;
+    line-height: 1.4;
+  }
+
+  p {
+    font-size: 1rem;
+    line-height: 1.6;
+  }
+
+  /* Reduce padding on mobile for more content */
+  .font-blackletter {
+    letter-spacing: normal;
+  }
+
+  /* Make images full-bleed on mobile for impact */
+  article img {
+    width: 100%;
+    height: auto;
+  }
+
+  /* Smoother scrolling on mobile */
+  * {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Remove hover effects on mobile (they stick) */
+  .card-lift-on-hover:hover {
+    transform: none;
+    box-shadow: none;
+  }
+
+  .image-zoom-on-hover:hover {
+    transform: none;
+    filter: grayscale(100%) contrast(125%);
+  }
 }

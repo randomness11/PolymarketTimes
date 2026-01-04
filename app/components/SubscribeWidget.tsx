@@ -36,15 +36,22 @@ export default function SubscribeWidget() {
     };
 
     return (
-        <div className="mb-8 border-t-4 border-black pt-1">
-            <div className="border-t border-black pt-2 text-center">
+        <div className="text-center">
                 <h3 className="font-blackletter text-2xl mb-1">The Daily Dispatch</h3>
                 <p className="font-serif italic text-xs mb-4">
                     Receive the morrow's intelligence and exclusive predictions directly to your telegraph office.
                 </p>
 
                 {status === 'success' ? (
-                    <div className="border border-black bg-[#e0ded9] p-4 mb-2">
+                    <div className="border border-black bg-[#e0ded9] p-4 mb-2 animate-success-reveal">
+                        <div className="flex items-center justify-center mb-2">
+                            <div className="success-checkmark">
+                                <svg className="w-12 h-12" viewBox="0 0 52 52">
+                                    <circle className="checkmark-circle" cx="26" cy="26" r="25" fill="none"/>
+                                    <path className="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+                                </svg>
+                            </div>
+                        </div>
                         <p className="font-bold text-xs uppercase tracking-widest text-green-900">Subscription Confirmed</p>
                         <p className="font-serif text-[10px] mt-1">{message}</p>
                     </div>
@@ -76,7 +83,6 @@ export default function SubscribeWidget() {
                 )}
 
                 {/* Count removed */}
-            </div>
         </div>
     );
 }

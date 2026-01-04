@@ -2,8 +2,9 @@ import { NextResponse } from 'next/server';
 import { recordMarketsShown } from '../lib/market-history';
 import { CuratorAgent } from './curator-agent';
 import { HeadlineWriterAgent } from './headline-agent';
-import { ArticleWriterAgent, generateDateline } from './article-agent';
+import { ArticleWriterAgent } from './article-agent';
 import { ChiefEditorAgent } from './chief-editor-agent';
+import { DatelineAgent } from './dateline-agent';
 import { getSupabase, EditionInsert } from '../lib/supabase';
 import { EditorialData, Market, MarketGroup, Datelines, FrontPageBlueprint } from '../../types';
 
@@ -85,11 +86,10 @@ export async function getEditorial(markets: Market[], groups: MarketGroup[] = []
   const { blueprint, reasoning } = await curatorAgent.call({ markets, groups });
   console.log(`Curator reasoning: ${reasoning}`);
 
-  // 2. Generate datelines (algorithmic, location-based)
-  const datelines: Datelines = {};
-  for (const story of blueprint.stories) {
-    datelines[story.id] = generateDateline(story);
-  }
+  // 2. DATELINE AGENT: Determine geographic context for each story (AGENTIC)
+  console.log('=== DATELINE AGENT ===');
+  const datelineAgent = new DatelineAgent(apiKey);
+  const { datelines } = await datelineAgent.call({ markets: blueprint.stories });
 
   // 3. HEADLINE WRITER AGENT: Generate punchy headlines
   const headlineAgent = new HeadlineWriterAgent(apiKey);

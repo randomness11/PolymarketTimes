@@ -127,7 +127,8 @@ export async function getMarkets(): Promise<MarketsResult> {
     const totalVolume = parseFloat(market.volume || '0');
     const liquidity = parseFloat(market.liquidity || '0');
 
-    const category = categorizeMarket(market.question, market.description || '');
+    // Temporarily store for AI categorization later
+    const category: MarketCategory = 'OTHER'; // Will be set by AI agent if enabled
 
     if (isShortTermSportsBet(market.question, category)) {
       continue;
@@ -155,10 +156,54 @@ export async function getMarkets(): Promise<MarketsResult> {
     preProcessed.map(m => fetchPriceHistory(m.raw.conditionId))
   );
 
-  // Phase 3: Complete scoring with fetched data
+  // Phase 3A: AI-POWERED CATEGORIZATION (AGENTIC) - Replace keyword matching
+  const useAICategorization = process.env.USE_AI_CATEGORIZATION === 'true';
+
+  if (useAICategorization && process.env.GEMINI_API_KEY) {
+    try {
+      console.log('Using AI-powered category classification...');
+      const { CategoryClassificationAgent } = await import('../editorial/category-agent');
+      const categoryAgent = new CategoryClassificationAgent(process.env.GEMINI_API_KEY);
+
+      const marketsForCategorization = preProcessed.map(m => ({
+        id: m.raw.conditionId,
+        question: m.raw.question,
+        description: m.raw.description || ''
+      }));
+
+      const { categories } = await categoryAgent.call({ markets: marketsForCategorization });
+
+      // Update categories in preprocessed data
+      for (const market of preProcessed) {
+        const aiCategory = categories.get(market.raw.conditionId);
+        if (aiCategory) {
+          market.category = aiCategory;
+        } else {
+          // Fallback to keyword-based
+          market.category = categorizeMarket(market.raw.question, market.raw.description || '');
+        }
+      }
+
+      console.log('AI categorization complete.');
+    } catch (error) {
+      console.error('AI categorization failed, using keyword fallback:', error);
+      // Fallback to keyword-based for all
+      for (const market of preProcessed) {
+        market.category = categorizeMarket(market.raw.question, market.raw.description || '');
+      }
+    }
+  } else {
+    // Use keyword-based categorization
+    for (const market of preProcessed) {
+      market.category = categorizeMarket(market.raw.question, market.raw.description || '');
+    }
+  }
+
+  // Phase 3B: Complete scoring with fetched data (ALGORITHMIC FALLBACK)
   const processedMarkets: Market[] = preProcessed.map((market, index) => {
     const priceChange24h = priceChanges[index];
 
+    // Fallback algorithmic scoring (used if AI scoring is disabled or fails)
     const money = normalizeVolume(market.volume24hr, maxVolume);
     const certainty = calculateCertainty(market.yesPrice);
     const speed = calculateSpeed(priceChange24h);
@@ -188,23 +233,66 @@ export async function getMarkets(): Promise<MarketsResult> {
     };
   });
 
+  // Phase 4: AI-POWERED SCORING (AGENTIC) - Optionally override algorithmic scores
+  const useAIScoring = process.env.USE_AI_SCORING === 'true';
+
+  if (useAIScoring && process.env.GEMINI_API_KEY) {
+    try {
+      console.log('Using AI-powered market scoring...');
+      const { MarketScoringAgent } = await import('../editorial/market-scoring-agent');
+      const scoringAgent = new MarketScoringAgent(process.env.GEMINI_API_KEY);
+      const { scores } = await scoringAgent.call({ markets: processedMarkets });
+
+      // Override scores with AI evaluation
+      for (const market of processedMarkets) {
+        const aiScore = scores.get(market.id);
+        if (aiScore) {
+          market.scores = {
+            money: aiScore.newsworthiness,
+            certainty: aiScore.urgency,
+            speed: aiScore.impact,
+            interest: 1.0, // AI already factors this in
+            total: aiScore.total,
+          };
+        }
+      }
+
+      console.log('AI scoring complete. Markets re-ranked.');
+    } catch (error) {
+      console.error('AI scoring failed, using algorithmic fallback:', error);
+    }
+  }
+
   processedMarkets.sort((a, b) => b.scores.total - a.scores.total);
 
-  // Group related markets
-  const groups = groupMarkets(processedMarkets);
+  // Phase 5: AI-POWERED MARKET GROUPING (AGENTIC) - Replace regex-based grouping
+  const useAIGrouping = process.env.USE_AI_GROUPING === 'true';
+  let groups: any[] = [];
+
+  if (useAIGrouping && process.env.GEMINI_API_KEY) {
+    try {
+      console.log('Using AI-powered market grouping...');
+      const { MarketGroupingAgent } = await import('../editorial/grouping-agent');
+      const groupingAgent = new MarketGroupingAgent(process.env.GEMINI_API_KEY);
+
+      const { groups: aiGroups } = await groupingAgent.call({ markets: processedMarkets });
+      groups = aiGroups;
+
+      console.log(`AI grouping complete: ${groups.length} groups created.`);
+    } catch (error) {
+      console.error('AI grouping failed, using algorithmic fallback:', error);
+      groups = groupMarkets(processedMarkets);
+    }
+  } else {
+    // Use algorithmic grouping
+    groups = groupMarkets(processedMarkets);
+  }
 
   console.log(`Markets API: Fetched ${rawMarkets.length} raw, ${processedMarkets.length} after filter.`);
 
   return {
     markets: processedMarkets,
-    groups: groups.map(g => ({
-      topic: g.topic,
-      primaryMarketId: g.primaryMarket.id,
-      relatedMarketIds: g.relatedMarkets.map(m => m.id),
-      allOutcomes: g.allOutcomes,
-      combinedVolume: g.combinedVolume,
-      isMultiOutcome: g.isMultiOutcome,
-    })),
+    groups: groups, // Already in correct format from agents
     timestamp: new Date().toISOString(),
     stats: {
       totalFetched: rawMarkets.length,

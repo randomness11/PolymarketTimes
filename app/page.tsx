@@ -6,6 +6,8 @@ import Footer from './components/Footer';
 import BottomGrid from './components/BottomGrid';
 import MarketTicker from './components/MarketTicker';
 import MainContentWrapper from './components/MainContentWrapper';
+import ReadableModeToggle from './components/ReadableModeToggle';
+import OnboardingFlow from './components/OnboardingFlow';
 import { getMarkets } from './api/markets/route';
 import { getEditorial } from './api/editorial/route';
 import { getCrypto } from './api/crypto/route';
@@ -85,12 +87,29 @@ export default async function Home() {
   const fallbackContent: Record<string, string> = {};
   const fallbackDatelines: Record<string, string> = {};
 
-  // Create rough fallback data from raw markets if editorial is missing
-  marketsData.markets.forEach(m => {
-    fallbackHeadlines[m.id] = m.question;
-    fallbackContent[m.id] = m.description || "Details are scarce at this hour. The market speaks for itself.";
-    fallbackDatelines[m.id] = "Polymarket";
+  // Create Victorian-styled fallback data from raw markets if editorial is missing
+  const fallbackLocations = ["LONDON", "NEW YORK", "WASHINGTON", "CHICAGO", "PHILADELPHIA", "BOSTON", "SAN FRANCISCO"];
+  marketsData.markets.forEach((m, idx) => {
+    // Convert questions to headline style (all caps, remove question mark)
+    fallbackHeadlines[m.id] = m.question.replace(/\?$/, '').toUpperCase();
+
+    // Create Victorian-styled fallback content
+    const oddsText = m.yesPrice > 0.5
+      ? `Market sentiment runs strongly in favor, with ${Math.round(m.yesPrice * 100)} per cent of capital wagered upon the affirmative.`
+      : `Considerable doubt prevails among traders, with only ${Math.round(m.yesPrice * 100)} per cent backing the proposition.`;
+
+    fallbackContent[m.id] = m.description
+      ? `${m.description}\n\n${oddsText} Volume of trade in the past four-and-twenty hours: ${formatVolume(m.volume24hr)}.`
+      : `Our mechanical scribes are still processing the particulars of this matter. ${oddsText} The discerning reader is advised to consult the market directly for full intelligence.`;
+
+    fallbackDatelines[m.id] = fallbackLocations[idx % fallbackLocations.length];
   });
+
+  function formatVolume(vol: number): string {
+    if (vol >= 1e6) return `$${(vol / 1e6).toFixed(1)} million`;
+    if (vol >= 1e3) return `$${(vol / 1e3).toFixed(0)} thousand`;
+    return `$${Math.round(vol)}`;
+  }
 
   const blueprint = editorialData?.blueprint || { stories: marketsData.markets.slice(0, 15) };
   const headlines = editorialData?.headlines || fallbackHeadlines;
@@ -211,6 +230,17 @@ export default async function Home() {
       <MarketTicker markets={tickerMarkets} />
       <Header cryptoPrices={cryptoData || undefined} timestamp={editorialData?.timestamp} />
 
+      {/* Fallback mode notification */}
+      {!editorialData && (
+        <div className="border-4 border-double border-black bg-[#e6e2d8] p-4 mb-4 text-center animate-fade-in">
+          <h3 className="font-blackletter text-xl mb-1">Manual Edition in Progress</h3>
+          <p className="font-serif text-xs italic">
+            Our mechanical scribes are still preparing the full editorial. You are viewing market intelligence in its raw form.
+            Please refresh in a few moments for the complete treatment.
+          </p>
+        </div>
+      )}
+
       {/* Mobile-only collapsible sidebar */}
       <MobileSidebar briefs={marketBriefs} specialReport={specialReportProps} />
 
@@ -238,6 +268,12 @@ export default async function Home() {
       <BottomGrid stories={bottomGridProps} />
 
       <Footer contestedMarkets={contestedMarkets} />
+
+      {/* Readable Mode Toggle */}
+      <ReadableModeToggle />
+
+      {/* Onboarding Flow for first-time visitors */}
+      <OnboardingFlow />
     </div>
   );
 }

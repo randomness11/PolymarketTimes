@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { UnifrakturMaguntia, Playfair_Display, EB_Garamond } from "next/font/google";
 import "./globals.css";
+import { ReadableModeProvider } from "./components/ReadableModeProvider";
 
 const unifraktur = UnifrakturMaguntia({
   weight: '400',
@@ -34,7 +35,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${unifraktur.variable} ${playfair.variable} ${garamond.variable} font-serif bg-[#f4f1ea] text-[#1a1a1a]`}>
-        {children}
+        <ReadableModeProvider>
+          {children}
+        </ReadableModeProvider>
       </body>
     </html>
   );
