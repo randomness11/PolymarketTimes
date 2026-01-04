@@ -1,20 +1,4 @@
-import { Market } from '../../types';
-
-/**
- * Market group - represents multiple related markets as one story
- */
-export interface MarketGroup {
-  topic: string;           // The base topic/race
-  primaryMarket: Market;  // Highest volume market in group
-  relatedMarkets: Market[]; // Other markets in same group
-  allOutcomes: Array<{     // All outcomes with probabilities
-    label: string;
-    probability: number;
-    volume: number;
-  }>;
-  combinedVolume: number;  // Total volume across all related markets
-  isMultiOutcome: boolean; // True if this is a "who will win X?" type
-}
+import { Market, MarketGroup } from '../../types';
 
 /**
  * Extract the base topic from a market question
@@ -165,8 +149,8 @@ export function groupMarkets(markets: Market[]): MarketGroup[] {
 
     groups.push({
       topic,
-      primaryMarket: primary,
-      relatedMarkets: others,
+      primaryMarketId: primary.id,
+      relatedMarketIds: others.map(m => m.id),
       allOutcomes,
       combinedVolume: sortedByVolume.reduce((sum, m) => sum + m.volume24hr, 0),
       isMultiOutcome: sortedByVolume.length > 1,
