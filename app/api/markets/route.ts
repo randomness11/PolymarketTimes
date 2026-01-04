@@ -233,60 +233,78 @@ export async function getMarkets(): Promise<MarketsResult> {
     };
   });
 
-  // Phase 4: AI-POWERED SCORING (AGENTIC) - Optionally override algorithmic scores
+  // Phase 4 & 5: AI-POWERED SCORING + GROUPING (PARALLEL - Independent operations)
   const useAIScoring = process.env.USE_AI_SCORING === 'true';
-
-  if (useAIScoring && process.env.GEMINI_API_KEY) {
-    try {
-      console.log('Using AI-powered market scoring...');
-      const { MarketScoringAgent } = await import('../editorial/market-scoring-agent');
-      const scoringAgent = new MarketScoringAgent(process.env.GEMINI_API_KEY);
-      const { scores } = await scoringAgent.call({ markets: processedMarkets });
-
-      // Override scores with AI evaluation
-      for (const market of processedMarkets) {
-        const aiScore = scores.get(market.id);
-        if (aiScore) {
-          market.scores = {
-            money: aiScore.newsworthiness,
-            certainty: aiScore.urgency,
-            speed: aiScore.impact,
-            interest: 1.0, // AI already factors this in
-            total: aiScore.total,
-          };
-        }
-      }
-
-      console.log('AI scoring complete. Markets re-ranked.');
-    } catch (error) {
-      console.error('AI scoring failed, using algorithmic fallback:', error);
-    }
-  }
-
-  processedMarkets.sort((a, b) => b.scores.total - a.scores.total);
-
-  // Phase 5: AI-POWERED MARKET GROUPING (AGENTIC) - Replace regex-based grouping
   const useAIGrouping = process.env.USE_AI_GROUPING === 'true';
   let groups: any[] = [];
 
-  if (useAIGrouping && process.env.GEMINI_API_KEY) {
-    try {
-      console.log('Using AI-powered market grouping...');
-      const { MarketGroupingAgent } = await import('../editorial/grouping-agent');
-      const groupingAgent = new MarketGroupingAgent(process.env.GEMINI_API_KEY);
+  // Run scoring and grouping in parallel for massive speedup
+  if ((useAIScoring || useAIGrouping) && process.env.GEMINI_API_KEY) {
+    const tasks = [];
 
-      const { groups: aiGroups } = await groupingAgent.call({ markets: processedMarkets });
-      groups = aiGroups;
+    // Task 1: AI Scoring (if enabled)
+    if (useAIScoring) {
+      tasks.push(
+        (async () => {
+          try {
+            console.log('Using AI-powered market scoring...');
+            const { MarketScoringAgent } = await import('../editorial/market-scoring-agent');
+            const scoringAgent = new MarketScoringAgent(process.env.GEMINI_API_KEY!);
+            const { scores } = await scoringAgent.call({ markets: processedMarkets });
 
-      console.log(`AI grouping complete: ${groups.length} groups created.`);
-    } catch (error) {
-      console.error('AI grouping failed, using algorithmic fallback:', error);
-      groups = groupMarkets(processedMarkets);
+            // Override scores with AI evaluation
+            for (const market of processedMarkets) {
+              const aiScore = scores.get(market.id);
+              if (aiScore) {
+                market.scores = {
+                  money: aiScore.newsworthiness,
+                  certainty: aiScore.urgency,
+                  speed: aiScore.impact,
+                  interest: 1.0, // AI already factors this in
+                  total: aiScore.total,
+                };
+              }
+            }
+
+            console.log('AI scoring complete. Markets re-ranked.');
+          } catch (error) {
+            console.error('AI scoring failed, using algorithmic fallback:', error);
+          }
+        })()
+      );
     }
-  } else {
-    // Use algorithmic grouping
+
+    // Task 2: AI Grouping (if enabled)
+    if (useAIGrouping) {
+      tasks.push(
+        (async () => {
+          try {
+            console.log('Using AI-powered market grouping...');
+            const { MarketGroupingAgent } = await import('../editorial/grouping-agent');
+            const groupingAgent = new MarketGroupingAgent(process.env.GEMINI_API_KEY!);
+
+            const { groups: aiGroups } = await groupingAgent.call({ markets: processedMarkets });
+            groups = aiGroups;
+
+            console.log(`AI grouping complete: ${groups.length} groups created.`);
+          } catch (error) {
+            console.error('AI grouping failed, using algorithmic fallback:', error);
+            groups = groupMarkets(processedMarkets);
+          }
+        })()
+      );
+    }
+
+    // Run both tasks in parallel
+    await Promise.all(tasks);
+  }
+
+  // Fallback to algorithmic grouping if AI grouping not enabled
+  if (!useAIGrouping || groups.length === 0) {
     groups = groupMarkets(processedMarkets);
   }
+
+  processedMarkets.sort((a, b) => b.scores.total - a.scores.total);
 
   console.log(`Markets API: Fetched ${rawMarkets.length} raw, ${processedMarkets.length} after filter.`);
 

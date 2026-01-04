@@ -136,8 +136,8 @@ export class ArticleWriterAgent implements Agent<ArticleWriterInput, ArticleWrit
         let finalEditorialNote = "The future is unevenly distributed.";
 
         await Promise.all(batches.map(async (batch, batchIdx) => {
-            // Stagger batch starts to avoid rate limits
-            await new Promise(resolve => setTimeout(resolve, batchIdx * 200));
+            // Stagger batch starts to avoid rate limits (reduced for faster execution)
+            await new Promise(resolve => setTimeout(resolve, batchIdx * 100));
 
             // Build simplified input for Gemini
             const batchInput = batch.map((s, localIdx) => {

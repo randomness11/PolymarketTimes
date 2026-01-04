@@ -34,8 +34,8 @@ export class DatelineAgent implements Agent<DatelineAgentInput, DatelineAgentOut
         const finalDatelines: Datelines = {};
 
         await Promise.all(batches.map(async (batch, batchIdx) => {
-            // Stagger to avoid rate limits
-            await new Promise(resolve => setTimeout(resolve, batchIdx * 150));
+            // Stagger to avoid rate limits (reduced for faster execution)
+            await new Promise(resolve => setTimeout(resolve, batchIdx * 75));
 
             // Format markets for AI analysis
             const marketsInput = batch.map((m, idx) => {

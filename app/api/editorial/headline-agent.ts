@@ -75,8 +75,8 @@ export class HeadlineWriterAgent implements Agent<HeadlineWriterInput, HeadlineW
         const finalHeadlines: Headlines = {};
 
         await Promise.all(batches.map(async (batch, batchIdx) => {
-            // Stagger batch starts to avoid rate limits
-            await new Promise(resolve => setTimeout(resolve, batchIdx * 150));
+            // Stagger batch starts to avoid rate limits (reduced for faster execution)
+            await new Promise(resolve => setTimeout(resolve, batchIdx * 75));
 
             const batchStories = batch.map((m, i) => {
                 const yesWinning = m.yesPrice > 0.5;

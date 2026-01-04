@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { recordMarketsShown } from '../lib/market-history';
+import { NewsDirectorAgent } from './news-director-agent';
 import { CuratorAgent } from './curator-agent';
 import { HeadlineWriterAgent } from './headline-agent';
 import { ArticleWriterAgent } from './article-agent';
@@ -80,22 +81,36 @@ export async function getEditorial(markets: Market[], groups: MarketGroup[] = []
 
   // === MULTI-AGENT ORCHESTRATION ===
 
-  // 1. CURATOR AGENT: Select 25 stories
+  // 1. NEWS DIRECTOR AGENT: Elite story selection (50-75 newsworthy candidates)
+  console.log('=== NEWS DIRECTOR AGENT ===');
+  const newsDirectorAgent = new NewsDirectorAgent(apiKey);
+  const { selectedMarkets, reasoning: newsDirectorReasoning } = await newsDirectorAgent.call({
+    markets,
+    // TODO: Pass recently covered market IDs from Supabase for novelty detection
+    recentlyCovered: []
+  });
+  console.log(`News Director reasoning: ${newsDirectorReasoning}`);
+  console.log(`News Director selected ${selectedMarkets.length} newsworthy markets from ${markets.length}`);
+
+  // 2. CURATOR AGENT: Select final 25 stories from newsworthy candidates
   console.log('=== CURATOR AGENT ===');
   const curatorAgent = new CuratorAgent(apiKey);
-  const { blueprint, reasoning } = await curatorAgent.call({ markets, groups });
+  const { blueprint, reasoning } = await curatorAgent.call({
+    markets: selectedMarkets, // Pass filtered list from News Director
+    groups
+  });
   console.log(`Curator reasoning: ${reasoning}`);
 
-  // 2. DATELINE AGENT: Determine geographic context for each story (AGENTIC)
+  // 3. DATELINE AGENT: Determine geographic context for each story (AGENTIC)
   console.log('=== DATELINE AGENT ===');
   const datelineAgent = new DatelineAgent(apiKey);
   const { datelines } = await datelineAgent.call({ markets: blueprint.stories });
 
-  // 3. HEADLINE WRITER AGENT: Generate punchy headlines
+  // 4. HEADLINE WRITER AGENT: Generate punchy headlines
   const headlineAgent = new HeadlineWriterAgent(apiKey);
   const { headlines } = await headlineAgent.call({ blueprint });
 
-  // 4. ARTICLE WRITER AGENT: Write the articles
+  // 5. ARTICLE WRITER AGENT: Write the articles
   const articleAgent = new ArticleWriterAgent(apiKey);
   const { content, editorialNote } = await articleAgent.call({
     blueprint,
@@ -104,7 +119,7 @@ export async function getEditorial(markets: Market[], groups: MarketGroup[] = []
     groupByMarketId,
   });
 
-  // 5. EDITOR-IN-CHIEF AGENT: Review and Polish
+  // 6. EDITOR-IN-CHIEF AGENT: Review and Polish
   console.log('=== CHIEF EDITOR AGENT ===');
   const editorAgent = new ChiefEditorAgent(apiKey);
   const { reviewedContent, notes } = await editorAgent.call({

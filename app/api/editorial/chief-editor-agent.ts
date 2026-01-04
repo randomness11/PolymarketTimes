@@ -38,8 +38,8 @@ export class ChiefEditorAgent implements Agent<ChiefEditorInput, ChiefEditorOutp
 
         // Process batches in parallel with staggered delays to avoid rate limits
         await Promise.all(batches.map(async (batchIds, batchIdx) => {
-            // Stagger batch starts to reduce concurrent requests
-            await new Promise(resolve => setTimeout(resolve, batchIdx * 200));
+            // Stagger batch starts to reduce concurrent requests (reduced for faster execution)
+            await new Promise(resolve => setTimeout(resolve, batchIdx * 100));
 
             const batchContent: ArticleContent = {};
             batchIds.forEach(id => {

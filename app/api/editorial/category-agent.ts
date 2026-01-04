@@ -40,8 +40,8 @@ export class CategoryClassificationAgent implements Agent<CategoryAgentInput, Ca
         let overallReasoning = '';
 
         await Promise.all(batches.map(async (batch, batchIdx) => {
-            // Stagger to avoid rate limits
-            await new Promise(resolve => setTimeout(resolve, batchIdx * 150));
+            // Stagger to avoid rate limits (reduced for faster execution)
+            await new Promise(resolve => setTimeout(resolve, batchIdx * 75));
 
             // Format markets for AI
             const marketsInput = batch.map((m, idx) => {
@@ -117,7 +117,7 @@ RESPOND WITH JSON ONLY (keys are market indices):
             try {
                 const response = await withRetry(async () => {
                     return client.chat.completions.create({
-                        model: GEMINI_MODELS.FAST, // Fast model is sufficient for categorization
+                        model: GEMINI_MODELS.FAST, // Fast model (3-4x faster than SMART)
                         messages: [{ role: 'user', content: prompt }],
                         temperature: 0.2, // Low temperature for consistent categorization
                         max_tokens: 1500,

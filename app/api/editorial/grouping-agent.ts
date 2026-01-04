@@ -98,7 +98,7 @@ RESPOND WITH JSON ONLY:
         try {
             const response = await withRetry(async () => {
                 return client.chat.completions.create({
-                    model: GEMINI_MODELS.SMART, // Smart model for nuanced grouping
+                    model: GEMINI_MODELS.FAST, // Fast model (grouping is pattern matching, not creative writing)
                     messages: [{ role: 'user', content: prompt }],
                     temperature: 0.3, // Moderate temperature for consistent but flexible grouping
                     max_tokens: 3000,

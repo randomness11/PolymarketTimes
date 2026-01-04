@@ -45,8 +45,8 @@ export class MarketScoringAgent implements Agent<MarketScoringInput, MarketScori
         let overallReasoning = '';
 
         await Promise.all(batches.map(async (batch, batchIdx) => {
-            // Stagger to avoid rate limits
-            await new Promise(resolve => setTimeout(resolve, batchIdx * 200));
+            // Stagger to avoid rate limits (reduced for faster execution)
+            await new Promise(resolve => setTimeout(resolve, batchIdx * 100));
 
             // Format markets for AI evaluation
             const marketsInput = batch.map((m, idx) => {
