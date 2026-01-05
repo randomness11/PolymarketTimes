@@ -123,7 +123,7 @@ export class ArticleWriterAgent implements Agent<ArticleWriterInput, ArticleWrit
         });
 
         // Batch processing - smaller batches to avoid token limits
-        const BATCH_SIZE = 3;
+        const BATCH_SIZE = 7;
         const batches = [];
         for (let i = 0; i < allSections.length; i += BATCH_SIZE) {
             batches.push(allSections.slice(i, i + BATCH_SIZE));
@@ -147,7 +147,7 @@ export class ArticleWriterAgent implements Agent<ArticleWriterInput, ArticleWrit
 
             const batchPrompt = `You are a senior investigative journalist at "The Polymarket Times" — a prestigious newspaper that covers prediction markets as breaking news.
 
-Write a compelling news brief (80-120 words) for EACH story below.
+Write a compelling news article for EACH story below.
 
 ═══════════════════════════════════════════════════════════
 STORIES TO COVER:
@@ -155,23 +155,63 @@ STORIES TO COVER:
 ${batchInput}
 
 ═══════════════════════════════════════════════════════════
-WRITING GUIDELINES:
+ARTICLE STRUCTURE (CLAIM → EVIDENCE → IMPLICATION):
 ═══════════════════════════════════════════════════════════
-1. **LEAD WITH THE NEWS**: First sentence answers "What happened and why does it matter?"
-2. **TRANSLATE ODDS INTO NARRATIVE**: 
-   - 90%+ → "all but certain", "inevitable"
-   - 70-90% → "highly likely", "strong momentum"  
-   - 50-70% → "edge", "slight advantage", "contested"
-   - <50% → "uphill battle", "long odds", "slim chance"
-3. **ADD CONTEXT**: Who are the key players? What are the stakes? What's the timeline?
-4. **LAYOUT ROLES**:
-   - **LEAD_STORY**: "Voice of God" tone. Synthesize stakes, history, and global impact. 250 words.
-   - **FEATURE**: Analytical. connect the dots. 150 words.
-   - **BRIEF**: Punchy, factual. "Just the facts". 60 words.
-5. **TONE**: Like The Economist meets Financial Times. Authoritative, witty, slightly sardonic.
+
+Every article must follow this structure:
+
+1. **CLAIM** (First sentence)
+   What's happening? State the news declaratively.
+   - BAD: "Markets are pricing Bitcoin..."
+   - GOOD: "Bitcoin stands on the precipice of $100,000, with traders pricing a 75% chance of breakout by month's end."
+
+2. **EVIDENCE** (2-3 sentences)
+   The numbers that prove it. Be specific.
+   - Include: The odds, the direction, the volume
+   - Translate odds into stakes: "with $12M wagered" or "institutional money piling in"
+
+3. **IMPLICATION** (1-2 sentences)
+   Why should the reader care? What happens next?
+   - If YES: What changes? Who wins/loses?
+   - If NO: What's the alternative scenario?
 
 ═══════════════════════════════════════════════════════════
-RESPOND WITH JSON ONLY (keys are story numbers):
+ODDS TRANSLATION GUIDE:
+═══════════════════════════════════════════════════════════
+- 90%+ → "all but certain", "inevitable", "foregone conclusion"
+- 80-90% → "highly likely", "strong momentum", "commanding lead"
+- 70-80% → "favored", "on track", "positioned to"
+- 50-70% → "edge", "slight advantage", "contested", "too close to call"
+- 30-50% → "uphill battle", "fighting chance", "mounting comeback"
+- <30% → "long odds", "slim chance", "would need dramatic reversal"
+
+═══════════════════════════════════════════════════════════
+LAYOUT-SPECIFIC INSTRUCTIONS:
+═══════════════════════════════════════════════════════════
+- **LEAD_STORY** (250 words): Voice of God. This is the story everyone's talking about.
+  Synthesize stakes, history, key players, and global implications.
+
+- **FEATURE** (150 words): Analytical depth. Connect the dots.
+  Explain WHY this matters, not just WHAT's happening.
+
+- **BRIEF** (60 words): Punchy and factual. Just the essential news.
+  One killer sentence for each of CLAIM/EVIDENCE/IMPLICATION.
+
+═══════════════════════════════════════════════════════════
+TONE GUIDE:
+═══════════════════════════════════════════════════════════
+The Economist meets Matt Levine.
+
+- Authoritative, not breathless
+- Witty, not trying too hard
+- Sardonic, not cynical
+- Informed, not pedantic
+
+BANNED WORDS: "very", "really", "basically", "just", "actually", "so yeah"
+PREFERRED: "The ledger suggests", "Markets imply", "Traders are pricing in", "The calculus shifts"
+
+═══════════════════════════════════════════════════════════
+RESPOND WITH JSON ONLY:
 ═══════════════════════════════════════════════════════════
 {
   "0": "Your article for story 0...",

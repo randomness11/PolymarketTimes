@@ -63,8 +63,8 @@ export class HeadlineWriterAgent implements Agent<HeadlineWriterInput, HeadlineW
         const stories = blueprint.stories;
         const client = createAIClient(this.apiKey);
 
-        // Process in small batches to prevent truncation
-        const BATCH_SIZE = 5;
+        // Process in larger batches with Gemini Flash's 1M token context
+        const BATCH_SIZE = 15;
         const batches: Market[][] = [];
         for (let i = 0; i < stories.length; i += BATCH_SIZE) {
             batches.push(stories.slice(i, i + BATCH_SIZE));
@@ -84,22 +84,50 @@ export class HeadlineWriterAgent implements Agent<HeadlineWriterInput, HeadlineW
                 return `[${i}] "${m.question}" → ${odds}% ${yesWinning ? 'YES' : 'NO'}`;
             }).join('\n');
 
-            const prompt = `You are a LEGENDARY newspaper headline editor. Write DRAMATIC headlines.
+            const prompt = `You are a LEGENDARY newspaper headline editor. Write DRAMATIC, DECLARATIVE headlines.
 
-EXAMPLES OF GREAT HEADLINES:
+═══════════════════════════════════════════════════════════
+ICONIC HEADLINES TO EMULATE:
+═══════════════════════════════════════════════════════════
 • "MEN WALK ON MOON" • "NIXON RESIGNS" • "WALL FALLS" • "TRUMP TRIUMPHS"
+• "WAR DECLARED" • "PEACE AT LAST" • "MARKETS CRASH" • "FED HOLDS LINE"
 
+═══════════════════════════════════════════════════════════
 STORIES:
+═══════════════════════════════════════════════════════════
 ${batchStories}
 
-RULES:
-1. If odds >70%, write as FACT: "TRUMP WINS" not "Will Trump win"
-2. MAX 6 WORDS. Active voice. NO questions.
-3. ALL CAPS. No hedging words (could/may/might).
-4. AVOID HYPERBOLE: Don't use "SKYROCKETS" or "PLUMMETS" unless >10% move.
-5. NEVER start with "WILL" - always declarative.
+═══════════════════════════════════════════════════════════
+HEADLINE RULES:
+═══════════════════════════════════════════════════════════
 
-JSON ONLY:
+1. **DECLARE, DON'T ASK**
+   - If odds >70%: Write as FACT ("TRUMP WINS" not "Will Trump win?")
+   - If odds 50-70%: Write as TENSION ("RACE TIGHTENS", "LEAD NARROWS")
+   - If odds <50%: Write as DRAMA ("UNDERDOG SURGES", "COMEBACK BREWING")
+
+2. **MAX 6 WORDS** — Active voice. NO questions. ALL CAPS.
+
+3. **VERB DIVERSITY** — Rotate through powerful verbs:
+   SURGES, PLUNGES, CLINCHES, LOCKS IN, EYES, RACES TOWARD,
+   FACES, BATTLES, THREATENS, SEIZES, SWEEPS, CRUSHES, EDGES,
+   STUNS, RATTLES, SECURES, CLAIMS, NEARS, DEFIES, HOLDS
+
+4. **AVOID THESE**:
+   - Hedging: "COULD", "MAY", "MIGHT", "POSSIBLY"
+   - Starting with "WILL"
+   - Hyperbole without movement: "SKYROCKETS" requires >10% move
+   - Generic: "MARKETS MOVE" (move WHERE?)
+
+5. **SPECIFICITY BEATS DRAMA**
+   - BAD: "BIG CHANGES AHEAD"
+   - GOOD: "BITCOIN EYES $100K"
+   - BAD: "ELECTION UPDATE"
+   - GOOD: "HARRIS SEIZES LEAD"
+
+═══════════════════════════════════════════════════════════
+RESPOND WITH JSON ONLY:
+═══════════════════════════════════════════════════════════
 {
   "0": "HEADLINE",
   "1": "HEADLINE",

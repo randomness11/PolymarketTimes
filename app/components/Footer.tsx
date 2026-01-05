@@ -30,6 +30,14 @@ export default function Footer({ contestedMarkets }: FooterProps) {
 
     return (
         <footer className="mt-8 border-t-2 border-black pt-4">
+            {/* Ornamental Footer Header */}
+            <div className="flex items-center justify-center mb-6 gap-4">
+                <div className="text-2xl">※</div>
+                <div className="h-px flex-1 bg-black"></div>
+                <div className="text-3xl">✾</div>
+                <div className="h-px flex-1 bg-black"></div>
+                <div className="text-2xl">※</div>
+            </div>
             {/* Highly Contested Markets Ticker */}
             <div className="border border-black p-4 mb-8 bg-gray-100">
                 <div className="flex justify-between items-center border-b border-black mb-2 pb-1">

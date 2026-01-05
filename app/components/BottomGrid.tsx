@@ -8,6 +8,7 @@ interface GridStory {
     image?: string;
     category: string;
     link?: string;
+    marketStatus?: 'confirmed' | 'dead_on_arrival' | 'chaos' | 'contested';
 }
 
 interface BottomGridProps {
@@ -42,6 +43,12 @@ export default function BottomGrid({ stories }: BottomGridProps) {
 
     return (
         <section ref={sectionRef} className="border-b-4 border-double-thick border-black py-8 px-4">
+            {/* Ornamental Section Header */}
+            <div className="flex items-center justify-center mb-6 gap-4">
+                <div className="h-px flex-1 bg-gradient-to-r from-transparent via-black to-black"></div>
+                <div className="text-3xl">❖</div>
+                <div className="h-px flex-1 bg-gradient-to-l from-transparent via-black to-black"></div>
+            </div>
             <div className="flex items-center justify-between border-b border-black mb-6 pb-2">
                 <h3 className="font-blackletter text-2xl">Elsewhere in the Markets</h3>
                 <span className="text-[10px] uppercase font-bold tracking-widest">Global Dispatch</span>
@@ -59,10 +66,21 @@ export default function BottomGrid({ stories }: BottomGridProps) {
                 </div>
             ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 animate-fade-in">
-                    {stories.map((story, i) => (
+                    {stories.map((story, i) => {
+                        const statusBadge = story.marketStatus === 'contested' ? '⚖' :
+                                          story.marketStatus === 'chaos' ? '🔥' :
+                                          story.marketStatus === 'confirmed' ? '✓' :
+                                          story.marketStatus === 'dead_on_arrival' ? '✗' : null;
+
+                        return (
                         <article key={i} className="flex flex-col h-full border-r border-gray-300 last:border-r-0 pr-4 last:pr-0 card-lift-on-hover">
                         {story.image && (
-                            <a href={story.link || "#"} target="_blank" rel="noopener noreferrer" className="block group">
+                            <a href={story.link || "#"} target="_blank" rel="noopener noreferrer" className="block group relative">
+                                {statusBadge && (
+                                    <span className="absolute top-2 left-2 z-10 bg-black text-white px-2 py-0.5 text-xs border border-white shadow-md">
+                                        {statusBadge}
+                                    </span>
+                                )}
                                 <div className="aspect-[3/2] w-full mb-3 overflow-hidden border border-black p-0.5">
                                     <img
                                         src={story.image}
@@ -82,7 +100,8 @@ export default function BottomGrid({ stories }: BottomGridProps) {
                             </h4>
                         </a>
                     </article>
-                ))}
+                    );
+                    })}
                 </div>
             )}
         </section>

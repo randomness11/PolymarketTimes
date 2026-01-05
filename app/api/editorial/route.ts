@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server';
 import { recordMarketsShown } from '../lib/market-history';
-import { NewsDirectorAgent } from './news-director-agent';
-import { CuratorAgent } from './curator-agent';
+import { EditorialDirectorAgent } from './editorial-director-agent';
 import { HeadlineWriterAgent } from './headline-agent';
 import { ArticleWriterAgent } from './article-agent';
 import { ChiefEditorAgent } from './chief-editor-agent';
 import { DatelineAgent } from './dateline-agent';
+import { ContrarianAgent } from './contrarian-agent';
+import { IntelligenceAgent, identifyMovingMarkets } from './intelligence-agent';
 import { getSupabase, EditionInsert } from '../lib/supabase';
 import { EditorialData, Market, MarketGroup, Datelines, FrontPageBlueprint } from '../../types';
 
@@ -81,36 +82,23 @@ export async function getEditorial(markets: Market[], groups: MarketGroup[] = []
 
   // === MULTI-AGENT ORCHESTRATION ===
 
-  // 1. NEWS DIRECTOR AGENT: Elite story selection (50-75 newsworthy candidates)
-  console.log('=== NEWS DIRECTOR AGENT ===');
-  const newsDirectorAgent = new NewsDirectorAgent(apiKey);
-  const { selectedMarkets, reasoning: newsDirectorReasoning } = await newsDirectorAgent.call({
-    markets,
-    // TODO: Pass recently covered market IDs from Supabase for novelty detection
-    recentlyCovered: []
-  });
-  console.log(`News Director reasoning: ${newsDirectorReasoning}`);
-  console.log(`News Director selected ${selectedMarkets.length} newsworthy markets from ${markets.length}`);
+  // 1. EDITORIAL DIRECTOR AGENT: Select 25-35 newsworthy stories AND assign layouts
+  console.log('=== EDITORIAL DIRECTOR AGENT ===');
+  const editorialDirectorAgent = new EditorialDirectorAgent(apiKey);
+  const { blueprint, reasoning } = await editorialDirectorAgent.call({ markets });
+  console.log(`Editorial Director reasoning: ${reasoning}`);
 
-  // 2. CURATOR AGENT: Select final 25 stories from newsworthy candidates
-  console.log('=== CURATOR AGENT ===');
-  const curatorAgent = new CuratorAgent(apiKey);
-  const { blueprint, reasoning } = await curatorAgent.call({
-    markets: selectedMarkets, // Pass filtered list from News Director
-    groups
-  });
-  console.log(`Curator reasoning: ${reasoning}`);
+  // 2. HEADLINE WRITER + DATELINE AGENT (parallel)
+  console.log('=== HEADLINE & DATELINE AGENTS (parallel) ===');
+  const [headlineResult, datelineResult] = await Promise.all([
+    new HeadlineWriterAgent(apiKey).call({ blueprint }),
+    new DatelineAgent(apiKey).call({ markets: blueprint.stories })
+  ]);
+  const { headlines } = headlineResult;
+  const { datelines } = datelineResult;
 
-  // 3. DATELINE AGENT: Determine geographic context for each story (AGENTIC)
-  console.log('=== DATELINE AGENT ===');
-  const datelineAgent = new DatelineAgent(apiKey);
-  const { datelines } = await datelineAgent.call({ markets: blueprint.stories });
-
-  // 4. HEADLINE WRITER AGENT: Generate punchy headlines
-  const headlineAgent = new HeadlineWriterAgent(apiKey);
-  const { headlines } = await headlineAgent.call({ blueprint });
-
-  // 5. ARTICLE WRITER AGENT: Write the articles
+  // 3. ARTICLE WRITER AGENT: Write the articles
+  console.log('=== ARTICLE WRITER AGENT ===');
   const articleAgent = new ArticleWriterAgent(apiKey);
   const { content, editorialNote } = await articleAgent.call({
     blueprint,
@@ -119,15 +107,42 @@ export async function getEditorial(markets: Market[], groups: MarketGroup[] = []
     groupByMarketId,
   });
 
-  // 6. EDITOR-IN-CHIEF AGENT: Review and Polish
+  // 4. CHIEF EDITOR AGENT: Review and Polish
   console.log('=== CHIEF EDITOR AGENT ===');
   const editorAgent = new ChiefEditorAgent(apiKey);
   const { reviewedContent, notes } = await editorAgent.call({
     blueprint,
     content,
+    headlines,
   });
   const finalContent = reviewedContent;
   console.log(`Chief Editor notes: ${notes}`);
+
+  // 5. CONTRARIAN AGENT: Devil's advocate takes for featured stories
+  console.log('=== CONTRARIAN AGENT ===');
+  const contrarianAgent = new ContrarianAgent(apiKey);
+  const { takes: contrarianTakes } = await contrarianAgent.call({
+    blueprint,
+    headlines,
+    featuredOnly: true
+  });
+  console.log(`Contrarian Agent: Generated ${Object.keys(contrarianTakes).length} contrarian takes`);
+
+  // 6. INTELLIGENCE AGENT: Analyze moving markets
+  console.log('=== INTELLIGENCE AGENT ===');
+  const movingMarkets = identifyMovingMarkets(
+    markets,
+    markets.reduce((acc, m) => {
+      // Use current price - priceChange as "old price" approximation
+      const oldPrice = m.yesPrice - (m.priceChange24h || 0) / 100;
+      acc[m.id] = oldPrice;
+      return acc;
+    }, {} as Record<string, number>),
+    5 // 5pp threshold
+  );
+  const intelligenceAgent = new IntelligenceAgent(apiKey);
+  const { briefs: intelligenceBriefs } = await intelligenceAgent.call({ movingMarkets });
+  console.log(`Intelligence Agent: Generated ${Object.keys(intelligenceBriefs).length} intelligence briefs`);
 
   // Construct final response
   const response: EditorialData = {
@@ -135,6 +150,8 @@ export async function getEditorial(markets: Market[], groups: MarketGroup[] = []
     content: finalContent,
     headlines,
     datelines,
+    contrarianTakes,
+    intelligenceBriefs,
     curatorReasoning: reasoning,
     editorNotes: notes,
     timestamp: new Date().toISOString(),

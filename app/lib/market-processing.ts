@@ -16,26 +16,30 @@ export const SHORT_TERM_SPORTS_PATTERNS = [
     /\bweek\s*\d+\b/i,      // "Week 15"
 ];
 
-// Editorial bias: favor interesting categories over boring finance
+// Editorial bias: THIS IS A NEWS PUBLICATION, NOT A CASINO
+// Prioritize stories with real-world consequences over entertainment betting
 export const CATEGORY_INTEREST: Record<MarketCategory, number> = {
-    CULTURE: 1.4,    // Pop culture is interesting
-    TECH: 1.35,      // Tech/AI is interesting
-    CONFLICT: 1.3,   // Geopolitics/war is interesting
-    SPORTS: 0.7,     // De-prioritized - too many NFL stories
-    SCIENCE: 1.15,   // Science breakthroughs
-    POLITICS: 1.0,   // Neutral (lots of volume anyway)
-    CRYPTO: 0.9,     // Niche
-    BUSINESS: 0.85,  // Less interesting
-    FINANCE: 0.75,   // Boring interest rates
-    OTHER: 1.0,
+    CONFLICT: 1.8,   // Wars, geopolitics - highest priority (affects millions)
+    POLITICS: 1.7,   // Elections, policy - shapes the world
+    TECH: 1.4,       // AI, breakthroughs - future-defining
+    SCIENCE: 1.3,    // Research, discoveries - important
+    BUSINESS: 1.1,   // M&A, major companies - economic impact
+    FINANCE: 1.0,    // Fed, rates - market-moving
+    CRYPTO: 0.8,     // Niche audience
+    CULTURE: 0.6,    // Entertainment - NOT NEWS (Oscar picks are gambling, not journalism)
+    SPORTS: 0.4,     // Individual games are NOT news
+    OTHER: 0.7,
 };
 
 // Keywords for categorization
 export const CATEGORY_KEYWORDS: Record<MarketCategory, string[]> = {
-    POLITICS: ['trump', 'biden', 'congress', 'senate', 'election', 'president', 'governor', 'democrat', 'republican', 'vote', 'poll', 'nominee', 'candidate', 'primary', 'electoral', 'impeach', 'legislation', 'bill', 'supreme court', 'cabinet', 'secretary', 'attorney general', 'doge', 'rfk', 'vance', 'harris', 'desantis', 'newsom', 'maduro', 'venezuela', 'putin'],
+    // NOTE: Removed 'primary' and 'bill' - they match too many false positives
+    // 'primary' matches "primary resolution source" in every Polymarket description
+    // 'bill' matches "buffalo bills" and other false positives
+    POLITICS: ['trump', 'biden', 'congress', 'senate', 'election', 'president', 'governor', 'democrat', 'republican', 'vote', 'poll', 'nominee', 'candidate', 'primary election', 'electoral', 'impeach', 'legislation', 'supreme court', 'cabinet', 'secretary', 'attorney general', 'doge', 'rfk', 'vance', 'harris', 'desantis', 'newsom', 'maduro', 'venezuela', 'putin', 'white house', 'executive order', 'tariff', 'deportation', 'immigration'],
     CONFLICT: ['ukraine', 'russia', 'war', 'nato', 'military', 'invasion', 'ceasefire', 'treaty', 'sanctions', 'iran', 'israel', 'gaza', 'hamas', 'hezbollah', 'taiwan', 'korea', 'missile', 'nuclear', 'troops', 'attack', 'strike', 'hostage', 'terrorism', 'conflict', 'peace', 'engagement'],
     FINANCE: ['fed', 'federal reserve', 'interest rate', 'inflation', 'gdp', 'recession', 'treasury', 'yield', 'bond', 'jobs report', 'unemployment', 'cpi', 'fomc', 'rate cut', 'rate hike', 'ecb', 'bank of', 'monetary', 'gold', 'silver', 's&p', 'dow jones', 'nasdaq'],
-    TECH: ['ai ', 'artificial intelligence', 'openai', 'chatgpt', 'gpt-5', 'gpt5', 'claude', 'anthropic', 'google', 'apple', 'microsoft', 'meta', 'amazon', 'tesla', 'spacex', 'launch', 'iphone', 'software', 'chip', 'semiconductor', 'nvidia', 'robot', 'self-driving', 'starship', 'agi', 'deepmind', 'llm', 'polymarket'],
+    TECH: ['ai ', 'artificial intelligence', 'openai', 'chatgpt', 'gpt-5', 'gpt5', 'claude', 'anthropic', 'google', 'apple', 'microsoft', 'meta', 'amazon', 'tesla', 'spacex', 'iphone', 'software', 'microchip', 'semiconductor', 'nvidia', 'robot', 'self-driving', 'starship', 'agi', 'deepmind', 'llm', 'polymarket'],
     CRYPTO: ['bitcoin', 'btc', 'ethereum', 'eth', 'crypto', 'token', 'defi', 'nft', 'blockchain', 'solana', 'binance', 'coinbase', 'altcoin', 'memecoin', 'satoshi', 'lighter', 'market cap', 'fdv'],
     CULTURE: ['oscar', 'grammy', 'emmy', 'golden globe', 'movie', 'film', 'album', 'celebrity', 'kardashian', 'taylor swift', 'beyonce', 'drake', 'kanye', 'netflix', 'disney', 'streaming', 'award', 'box office', 'concert', 'tour', 'viral', 'tiktok', 'youtube', 'influencer', 'super bowl halftime', 'met gala', 'fashion', 'spotify', 'mrbeast', 'views'],
     SPORTS: ['nfl', 'nba', 'mlb', 'nhl', 'soccer', 'football', 'basketball', 'baseball', 'hockey', 'super bowl', 'world series', 'playoffs', 'finals', 'mvp', 'draft', 'coach', 'ufc', 'boxing', 'olympics', 'world cup', 'f1', 'formula 1', 'tennis', 'golf', 'premier league', 'la liga', 'bundesliga', 'serie a', 'champions league', 'arsenal', 'manchester', 'liverpool', 'chelsea', 'tottenham', 'city', 'united', 'lakers', 'celtics', 'warriors', 'kings', 'rangers', 'yankees', 'dodgers', 'cubs', 'red sox', 'everton'],
@@ -52,10 +56,16 @@ export function categorizeMarket(question: string, description: string): MarketC
         CULTURE: 0, SPORTS: 0, SCIENCE: 0, BUSINESS: 0, OTHER: 0,
     };
 
+    const matches: Record<MarketCategory, string[]> = {
+        POLITICS: [], CONFLICT: [], FINANCE: [], TECH: [], CRYPTO: [],
+        CULTURE: [], SPORTS: [], SCIENCE: [], BUSINESS: [], OTHER: [],
+    };
+
     for (const [category, keywords] of Object.entries(CATEGORY_KEYWORDS)) {
         for (const keyword of keywords) {
             if (text.includes(keyword)) {
                 scores[category as MarketCategory] += 1;
+                matches[category as MarketCategory].push(keyword);
             }
         }
     }
@@ -68,6 +78,11 @@ export function categorizeMarket(question: string, description: string): MarketC
             maxScore = score;
             maxCategory = category as MarketCategory;
         }
+    }
+
+    // Debug: log which keywords matched for sports-related questions
+    if (text.includes('football') || text.includes('bundesliga') || text.includes('bayern')) {
+        console.log(`KEYWORD MATCH for "${question.substring(0,40)}...": SPORTS=[${matches.SPORTS}] (${scores.SPORTS}) vs POLITICS=[${matches.POLITICS}] (${scores.POLITICS}) => ${maxCategory}`);
     }
 
     return maxCategory;

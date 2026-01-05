@@ -78,6 +78,23 @@ export interface ArticleContent {
     [marketId: string]: string;
 }
 
+export interface ContrarianTake {
+    marketId: string;
+    bearCase: string;
+    keyRisk: string;
+    whoDisagrees: string;
+    confidence: 'HIGH' | 'MEDIUM' | 'LOW';
+}
+
+export interface IntelligenceBrief {
+    marketId: string;
+    catalyst: string;
+    credibility: 'HIGH' | 'MEDIUM' | 'LOW';
+    analysis: string;
+    nextMove: string;
+    tradingImplication: string;
+}
+
 export interface EditorialData {
     blueprint: FrontPageBlueprint;
     content: ArticleContent;
@@ -85,6 +102,9 @@ export interface EditorialData {
     datelines: Datelines;
     curatorReasoning?: string | null;
     editorNotes?: string | null;
+    editorVerdicts?: Record<string, 'PUBLISH' | 'REVISED' | 'FLAGGED'>;
+    contrarianTakes?: Record<string, ContrarianTake>;
+    intelligenceBriefs?: Record<string, IntelligenceBrief>;
     timestamp: string;
 }
 

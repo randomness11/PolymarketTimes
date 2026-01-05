@@ -116,9 +116,43 @@ export default async function Home() {
   const content = editorialData?.content || fallbackContent;
   const datelines = editorialData?.datelines || fallbackDatelines;
 
+  // Create lookup for fresh market data by ID
+  const freshMarketMap = new Map<string, typeof marketsData.markets[0]>();
+  for (const m of marketsData.markets) {
+    freshMarketMap.set(m.id, m);
+  }
 
-
-  const stories = blueprint.stories;
+  // Merge cached blueprint stories with fresh market data
+  // The blueprint determines WHICH stories to show and their layout,
+  // but we use FRESH prices/volumes from the live API
+  const stories: typeof blueprint.stories = [];
+  for (const story of blueprint.stories) {
+    const freshData = freshMarketMap.get(story.id);
+    if (freshData) {
+      stories.push({
+        id: story.id,
+        question: story.question,
+        slug: story.slug,
+        description: story.description,
+        outcomes: story.outcomes,
+        endDate: story.endDate,
+        image: story.image,
+        category: story.category,
+        layout: story.layout,
+        liquidity: story.liquidity,
+        // Fresh data from API
+        yesPrice: freshData.yesPrice,
+        noPrice: freshData.noPrice,
+        volume24hr: freshData.volume24hr,
+        totalVolume: freshData.totalVolume,
+        priceChange24h: freshData.priceChange24h,
+        marketStatus: freshData.marketStatus,
+        scores: freshData.scores,
+      });
+    } else {
+      stories.push(story);
+    }
+  }
 
 
   // Dedupe stories by ID first (in case curator returns duplicates)
@@ -181,7 +215,10 @@ export default async function Home() {
     location: datelines[mainStory.id] || "Internet",
     image: mainStory.image || "https://picsum.photos/seed/news/800/600",
     content: content[mainStory.id],
-    link: `https://polymarket.com/event/${mainStory.slug}`
+    link: `https://polymarket.com/event/${mainStory.slug}`,
+    marketStatus: mainStory.marketStatus,
+    contrarianTake: editorialData?.contrarianTakes?.[mainStory.id],
+    intelligenceBrief: editorialData?.intelligenceBriefs?.[mainStory.id]
   } : undefined;
 
   const marketBriefs = briefStories.map(s => ({
@@ -210,7 +247,8 @@ export default async function Home() {
     odds: `${Math.round(s.yesPrice * 100)}¢`,
     image: s.image || undefined,
     category: s.category,
-    link: `https://polymarket.com/event/${s.slug}`
+    link: `https://polymarket.com/event/${s.slug}`,
+    marketStatus: s.marketStatus
   }));
 
   // Simple markets data for ticker

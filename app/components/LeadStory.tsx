@@ -9,6 +9,20 @@ interface LeadStoryProps {
     image?: string;
     content?: string; // Expecting a string where paragraphs are separated by '\n\n'
     link?: string;
+    marketStatus?: 'confirmed' | 'dead_on_arrival' | 'chaos' | 'contested';
+    contrarianTake?: {
+        bearCase: string;
+        keyRisk: string;
+        whoDisagrees: string;
+        confidence: 'HIGH' | 'MEDIUM' | 'LOW';
+    };
+    intelligenceBrief?: {
+        catalyst: string;
+        credibility: 'HIGH' | 'MEDIUM' | 'LOW';
+        analysis: string;
+        nextMove: string;
+        tradingImplication: string;
+    };
 }
 
 export default function LeadStory({
@@ -17,7 +31,10 @@ export default function LeadStory({
     location = "Washington Bureau",
     image,
     content,
-    link = "#"
+    link = "#",
+    marketStatus,
+    contrarianTake,
+    intelligenceBrief
 }: LeadStoryProps) {
     const defaultImage = "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a3/Canadian_Pacific_Railway_locomotive_2860.jpg/1200px-Canadian_Pacific_Railway_locomotive_2860.jpg";
 
@@ -31,12 +48,28 @@ export default function LeadStory({
             "As the sun sets on another trading day, the only certainty is uncertainty itself. The odds board flickers—a modern oracle casting long shadows over the future of the republic."
         ];
 
+    // Market status badge config
+    const statusConfig = {
+        confirmed: { label: '✓ SETTLED', color: 'bg-green-800 text-white', description: 'Near-certain outcome' },
+        contested: { label: '⚖ CONTESTED', color: 'bg-red-700 text-white', description: 'Closely divided market' },
+        chaos: { label: '🔥 VOLATILE', color: 'bg-orange-600 text-white', description: 'Wild price swings' },
+        dead_on_arrival: { label: '✗ REJECTED', color: 'bg-gray-600 text-white', description: 'Market consensus: unlikely' }
+    };
+
     return (
         <article className="px-4">
 
             {/* Headlines */}
             <div className="text-center mb-6 group cursor-pointer">
                 <a href={link} target="_blank" rel="noopener noreferrer" className="block">
+                    {/* Market Status Badge */}
+                    {marketStatus && statusConfig[marketStatus] && (
+                        <div className="inline-block mb-3">
+                            <span className={`${statusConfig[marketStatus].color} px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest border-2 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)]`}>
+                                {statusConfig[marketStatus].label}
+                            </span>
+                        </div>
+                    )}
                     <h1 className="text-6xl md:text-8xl font-display font-bold leading-[0.9] mb-4 tracking-tight transition-all duration-300 group-hover:scale-[1.01] group-hover:text-black/90">
                         {headline}
                     </h1>
@@ -106,7 +139,7 @@ export default function LeadStory({
                 <div>
                     {paragraphs[0] && (
                         <p className="mb-4">
-                            <span className="float-left text-7xl font-blackletter line-[0.8] mr-2 mt-[-10px]">
+                            <span className="float-left text-7xl font-blackletter line-[0.8] mr-3 mt-[-10px] drop-cap-animated" style={{ lineHeight: '0.8' }}>
                                 {paragraphs[0].charAt(0)}
                             </span>
                             {paragraphs[0].slice(1)}
@@ -123,6 +156,71 @@ export default function LeadStory({
                     {paragraphs.slice(2).map((p, i) => <p key={i} className="mb-4">{p}</p>)}
                 </div>
             </div>
+
+            {/* Ornamental Divider */}
+            <div className="flex items-center justify-center my-8 gap-4">
+                <div className="h-px flex-1 bg-gradient-to-r from-transparent via-black to-transparent"></div>
+                <div className="text-2xl">✦</div>
+                <div className="h-px flex-1 bg-gradient-to-r from-transparent via-black to-transparent"></div>
+            </div>
+
+            {/* Intelligence Brief Section */}
+            {intelligenceBrief && (
+                <div className="mt-8 border-4 border-double border-black p-6 bg-[#fffef8] shadow-[inset_0_0_0_4px_#f4f1ea]">
+                    <div className="flex items-center gap-2 mb-4 border-b-2 border-black pb-2">
+                        <span className="text-2xl">📊</span>
+                        <h3 className="font-blackletter text-2xl">Intelligence Desk</h3>
+                        <span className={`ml-auto px-3 py-1 text-[9px] font-bold uppercase tracking-wider ${intelligenceBrief.credibility === 'HIGH' ? 'bg-green-700 text-white' : intelligenceBrief.credibility === 'MEDIUM' ? 'bg-yellow-600 text-white' : 'bg-gray-500 text-white'} border border-black`}>
+                            {intelligenceBrief.credibility} CREDIBILITY
+                        </span>
+                    </div>
+                    <div className="grid md:grid-cols-2 gap-4 font-serif">
+                        <div>
+                            <p className="text-sm font-bold uppercase tracking-wide mb-2 text-gray-700">Catalyst</p>
+                            <p className="text-base leading-relaxed mb-4">{intelligenceBrief.catalyst}</p>
+                            <p className="text-sm font-bold uppercase tracking-wide mb-2 text-gray-700">Next Move</p>
+                            <p className="text-base leading-relaxed">{intelligenceBrief.nextMove}</p>
+                        </div>
+                        <div>
+                            <p className="text-sm font-bold uppercase tracking-wide mb-2 text-gray-700">Analysis</p>
+                            <p className="text-base leading-relaxed mb-4">{intelligenceBrief.analysis}</p>
+                            <div className="border-l-4 border-black pl-4 bg-gray-50 p-3">
+                                <p className="text-xs font-bold uppercase tracking-wide mb-1 text-gray-600">Trading Implication</p>
+                                <p className="text-sm font-bold italic">{intelligenceBrief.tradingImplication}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Contrarian Take Section */}
+            {contrarianTake && (
+                <div className="mt-6 border-4 border-black bg-[#2a2a2a] text-[#f4f1ea] p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+                    <div className="flex items-center gap-3 mb-4 border-b-2 border-[#f4f1ea] pb-3">
+                        <span className="text-3xl">⚠️</span>
+                        <h3 className="font-blackletter text-3xl text-white">The Contrarian View</h3>
+                        <span className={`ml-auto px-3 py-1 text-[9px] font-bold uppercase tracking-wider ${contrarianTake.confidence === 'HIGH' ? 'bg-red-600 text-white' : contrarianTake.confidence === 'MEDIUM' ? 'bg-yellow-500 text-black' : 'bg-gray-400 text-black'} border-2 border-white`}>
+                            {contrarianTake.confidence} CONFIDENCE
+                        </span>
+                    </div>
+                    <div className="space-y-4 font-serif">
+                        <div>
+                            <p className="text-sm font-bold uppercase tracking-wide mb-2 text-gray-300">The Bear Case</p>
+                            <p className="text-lg leading-relaxed">{contrarianTake.bearCase}</p>
+                        </div>
+                        <div className="grid md:grid-cols-2 gap-4">
+                            <div>
+                                <p className="text-sm font-bold uppercase tracking-wide mb-2 text-gray-300">Key Risk</p>
+                                <p className="text-base leading-relaxed">{contrarianTake.keyRisk}</p>
+                            </div>
+                            <div>
+                                <p className="text-sm font-bold uppercase tracking-wide mb-2 text-gray-300">Who Disagrees</p>
+                                <p className="text-base leading-relaxed italic">{contrarianTake.whoDisagrees}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </article>
     );
 }
