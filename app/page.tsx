@@ -111,7 +111,9 @@ export default async function Home() {
     return `$${Math.round(vol)}`;
   }
 
-  const blueprint = editorialData?.blueprint || { stories: marketsData.markets.slice(0, 15) };
+  const blueprint = editorialData?.blueprint || {
+    stories: marketsData.markets.slice(0, 15).map(m => ({ ...m, layout: 'BRIEF' as const }))
+  };
   const headlines = editorialData?.headlines || fallbackHeadlines;
   const content = editorialData?.content || fallbackContent;
   const datelines = editorialData?.datelines || fallbackDatelines;
