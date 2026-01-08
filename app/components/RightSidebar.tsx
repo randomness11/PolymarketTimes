@@ -84,31 +84,6 @@ function OnThisDay() {
 
 import SubscribeWidget from './SubscribeWidget';
 
-import Link from 'next/link';
-
-export function TokenAd() {
-    return (
-        <div className="border-2 border-black p-4 text-center bg-[#f4f1ea] relative overflow-hidden group hover:bg-[#e6e2d8] transition-colors">
-            <h3 className="font-serif font-bold text-sm uppercase mb-2 tracking-wider">Notice to Readers</h3>
-            <p className="font-serif text-xs italic mb-3">
-                The official digital currency of The Polymarket Times
-            </p>
-
-            <div className="border border-black p-2 mb-3 inline-block transform group-hover:scale-105 transition-transform">
-                <span className="font-blackletter text-2xl">$TIMES</span>
-            </div>
-
-            <p className="text-[9px] uppercase tracking-widest mb-3 text-gray-600">
-                "The Currency of Truth"
-            </p>
-
-            <Link href="/token" className="block w-full border border-black text-black py-1.5 font-bold uppercase text-[10px] hover:bg-black hover:text-white transition-colors">
-                Learn More
-            </Link>
-        </div>
-    );
-}
-
 export function DailyDispatch() {
     return <SubscribeWidget />;
 }
@@ -162,11 +137,6 @@ export default function RightSidebar({ techStory, fedData }: RightSidebarProps) 
 
             {/* Content section */}
             <SiliconChip story={techStory} />
-
-            {/* Secondary action: Token */}
-            <div className="mt-6 pt-6 border-t-2 border-black">
-                <TokenAd />
-            </div>
         </aside>
     );
 }
