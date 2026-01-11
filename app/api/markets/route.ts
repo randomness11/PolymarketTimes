@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { groupMarkets } from '../lib/market-grouping';
+import { getSupabase, EditionInsert } from '../lib/supabase';
 import {
   categorizeMarket,
   calculateCertainty,
@@ -60,10 +61,34 @@ async function fetchPriceHistory(conditionId: string): Promise<number | null> {
 }
 
 export async function getMarkets(): Promise<MarketsResult> {
+  const supabase = getSupabase();
+  const CACHE_KEY = 'market_cache_latest';
+  const CACHE_DURATION_MS = 3600 * 1000; // 1 hour
+
+  // 1. Try to get from Supabase Cache
+  if (supabase) {
+    const { data: cached } = await supabase
+      .from('editions')
+      .select('data, created_at')
+      .eq('date_str', CACHE_KEY)
+      .single();
+
+    if (cached && cached.data) {
+      const age = new Date().getTime() - new Date(cached.created_at).getTime();
+      if (age < CACHE_DURATION_MS) {
+        console.log('Serving markets from Supabase cache');
+        return cached.data as MarketsResult;
+      } else {
+        console.log('Supabase cache stale, refreshing...');
+      }
+    }
+  }
+
+  // 2. Fetch fresh data (No Next.js Cache)
   // Fetch FEATURED events
   const response = await fetch(
     'https://gamma-api.polymarket.com/events?limit=300&closed=false',
-    { next: { revalidate: 3600 } }
+    { cache: 'no-store' } // DONT use Next.js Data Cache (limit 2MB)
   );
 
   if (!response.ok) {
@@ -290,7 +315,7 @@ export async function getMarkets(): Promise<MarketsResult> {
 
   console.log(`Markets API: Fetched ${rawMarkets.length} raw, ${processedMarkets.length} after filter.`);
 
-  return {
+  const result: MarketsResult = {
     markets: processedMarkets,
     groups: groups, // Already in correct format from agents
     timestamp: new Date().toISOString(),
@@ -300,6 +325,22 @@ export async function getMarkets(): Promise<MarketsResult> {
       groupCount: groups.length,
     },
   };
+
+  // Save to Supabase Cache
+  if (supabase) {
+    const { error } = await supabase
+      .from('editions')
+      .upsert({
+        date_str: CACHE_KEY,
+        data: result,
+        created_at: new Date().toISOString()
+      }, { onConflict: 'date_str' });
+
+    if (error) console.error('Failed to save market cache:', error);
+    else console.log('Saved fresh markets to Supabase cache');
+  }
+
+  return result;
 }
 
 export const revalidate = 3600;
