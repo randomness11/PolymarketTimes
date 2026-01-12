@@ -268,17 +268,18 @@ function calculateFallbackScore(market: Market): number {
     const certainty = Math.abs(market.yesPrice - 0.5) * 2; // 0 at 50%, 1 at 0/100%
     const speed = Math.min(Math.abs(market.priceChange24h || 0) / 25, 1); // 0-1 scale
 
+    // TECH TWITTER FOCUS: Match market-processing.ts weights
     const categoryWeights: Record<string, number> = {
-        CULTURE: 1.4,
-        TECH: 1.35,
-        CONFLICT: 1.3,
-        SPORTS: 0.7,
-        SCIENCE: 1.15,
-        POLITICS: 1.0,
-        CRYPTO: 0.9,
-        BUSINESS: 0.85,
-        FINANCE: 0.75,
-        OTHER: 1.0,
+        TECH: 1.8,       // Core audience
+        CRYPTO: 1.6,     // Polymarket native
+        BUSINESS: 1.4,   // Startups, funding
+        SCIENCE: 1.3,    // Space, biotech
+        POLITICS: 1.2,   // Only tech-relevant
+        CONFLICT: 1.0,   // When market-moving
+        FINANCE: 1.0,    // Fed, rates
+        CULTURE: 0.6,    // Minimal
+        SPORTS: 0.4,     // Minimal
+        OTHER: 0.7,
     };
 
     const interest = categoryWeights[market.category] || 1.0;

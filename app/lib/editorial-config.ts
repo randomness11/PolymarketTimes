@@ -7,18 +7,19 @@ import type { MarketCategory } from '../types';
 
 /**
  * Curator Agent: How many stories to pull from each category
+ * TECH TWITTER FOCUS: Prioritize tech, crypto, and business
  */
 export const CATEGORY_QUOTAS: Record<MarketCategory, number> = {
-    POLITICS: 6,
-    TECH: 5,
-    CRYPTO: 4,
-    CULTURE: 4,
-    CONFLICT: 4,
-    SPORTS: 2,  // Hard cap - too many NFL stories otherwise
-    SCIENCE: 4,
-    BUSINESS: 4,
-    FINANCE: 0, // Deprioritized (boring)
-    OTHER: 5,
+    TECH: 10,       // AI, products, breakthroughs - THIS IS THE CORE
+    CRYPTO: 8,      // Polymarket native audience
+    BUSINESS: 5,    // Startups, IPOs, funding
+    SCIENCE: 4,     // Space, biotech
+    POLITICS: 3,    // Only tech-relevant policy
+    CONFLICT: 2,    // Only if affecting markets
+    FINANCE: 2,     // Fed, rates when significant
+    CULTURE: 1,     // MAX 1 - not our audience
+    SPORTS: 1,      // MAX 1 - not our audience
+    OTHER: 3,
 };
 
 /**

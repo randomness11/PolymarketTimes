@@ -323,9 +323,9 @@ RESPOND WITH JSON ONLY:
 
             const allFallback = [...mainStories, ...entertainmentFiller];
 
-            // Find the best LEAD candidate (highest score in POLITICS or CONFLICT)
+            // Find the best LEAD candidate (highest score in TECH or CRYPTO - our core audience)
             const leadCandidate = allFallback.find(m =>
-                m.category === 'POLITICS' || m.category === 'CONFLICT'
+                m.category === 'TECH' || m.category === 'CRYPTO'
             ) || allFallback[0];
 
             const fallbackStories = allFallback.map((m, i) => ({

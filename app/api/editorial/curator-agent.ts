@@ -42,11 +42,13 @@ function getStratifiedCandidates(markets: Market[]): Market[] {
             .sort((a, b) => (Math.abs(b.priceChange24h || 0) - Math.abs(a.priceChange24h || 0)))
             .slice(0, count);
 
-    const politics = getTop('POLITICS', 6);
-    const tech = getTop('TECH', 5);
-    const crypto = getTop('CRYPTO', 4);
-    const culture = getTop('CULTURE', 4);
-    const conflict = getTop('CONFLICT', 4);
+    // TECH TWITTER FOCUS: Prioritize tech, crypto, business
+    const tech = getTop('TECH', 10);        // Core audience
+    const crypto = getTop('CRYPTO', 8);     // Polymarket native
+    const business = getTop('BUSINESS', 5); // Startups, funding
+    const politics = getTop('POLITICS', 3); // Only tech-relevant
+    const conflict = getTop('CONFLICT', 2); // Only if market-moving
+    const culture = getTop('CULTURE', 1);   // Minimal
 
     // DIVERSE SPORTS: Pick from different leagues, not just NFL
     const getDiverseSports = (): Market[] => {
@@ -74,10 +76,9 @@ function getStratifiedCandidates(markets: Market[]): Market[] {
         }
         return picked;
     };
-    const sports = getDiverseSports();
-    const science = getTop('SCIENCE', 4); // Increased
-    const business = getTop('BUSINESS', 4); // Increased
-    const other = getTop('OTHER', 5);
+    const sports = getDiverseSports().slice(0, 1); // MAX 1 sports
+    const science = getTop('SCIENCE', 4);
+    const other = getTop('OTHER', 3);
 
     // Get high velocity movers (exclude sports to prevent NFL domination)
     const movers = getMovers(10).filter(m => m.category !== 'SPORTS');
