@@ -167,12 +167,32 @@ export default async function Home() {
     return true;
   });
 
-  // Simple slicing for layout
-  const mainStory = uniqueStories[0];
-  const briefStories = uniqueStories.slice(1, 6);
-  const techStory = uniqueStories.find(s => s.category === 'TECH' && s.id !== mainStory?.id) || uniqueStories[6];
-  const bottomStories = uniqueStories.slice(7); // All remaining stories
-  const specialReportStory = uniqueStories[10] || uniqueStories[5];
+  // USE LAYOUT ASSIGNMENTS from Editorial Director
+  // LEAD_STORY = main big story (top left)
+  // FEATURE = sidebar stories (right side, 5 slots)
+  // BRIEF = bottom grid stories
+
+  const mainStory = uniqueStories.find(s => s.layout === 'LEAD_STORY') || uniqueStories[0];
+
+  // Features go to sidebar (5 slots)
+  const featureStories = uniqueStories.filter(s => s.layout === 'FEATURE' && s.id !== mainStory?.id);
+  const briefStories = featureStories.length >= 5
+    ? featureStories.slice(0, 5)
+    : [...featureStories, ...uniqueStories.filter(s => s.layout !== 'LEAD_STORY' && !featureStories.includes(s))].slice(0, 5);
+
+  // Tech story for right sidebar - prefer a FEATURE tech story
+  const techStory = uniqueStories.find(s =>
+    s.category === 'TECH' && s.id !== mainStory?.id && !briefStories.some(b => b.id === s.id)
+  ) || uniqueStories.find(s => s.id !== mainStory?.id && !briefStories.some(b => b.id === s.id));
+
+  // Bottom grid = all BRIEF stories + remaining stories
+  const usedIds = new Set([mainStory?.id, techStory?.id, ...briefStories.map(s => s.id)].filter(Boolean));
+  const bottomStories = uniqueStories.filter(s => !usedIds.has(s.id));
+
+  // Special report - pick an interesting story from bottom grid
+  const specialReportStory = bottomStories.find(s =>
+    s.category === 'TECH' || s.category === 'CRYPTO' || s.category === 'SCIENCE'
+  ) || bottomStories[0];
 
   // Find Fed/FOMC related market for the Fed Reserve widget
   const fedKeywords = ['fed', 'fomc', 'federal reserve', 'rate cut', 'rate hike', 'interest rate', 'powell'];

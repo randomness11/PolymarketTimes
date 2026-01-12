@@ -2,24 +2,23 @@ import { NextRequest } from 'next/server';
 import { EditorialDirectorAgent } from '../editorial-director-agent';
 import { HeadlineWriterAgent } from '../headline-agent';
 import { ArticleWriterAgent, generateDateline } from '../article-agent';
-import { DatelineAgent } from '../dateline-agent';
-import { ContrarianAgent } from '../contrarian-agent';
 import { Market, MarketGroup, Story, Headlines, Datelines, ArticleContent } from '../../../types';
 
 export const runtime = 'edge'; // Use edge runtime for streaming
 export const dynamic = 'force-dynamic';
 
 /**
- * Streaming Editorial Endpoint
+ * Streaming Editorial Endpoint (Simplified 3-Agent Architecture)
  *
  * Returns a Server-Sent Events stream that progressively delivers:
- * 1. Blueprint (story selection + layouts)
+ * 1. Blueprint (story selection + layouts + datelines)
  * 2. Headlines (as batches complete)
- * 3. Datelines (as batches complete)
- * 4. Articles (as batches complete)
- * 5. Contrarian takes (for featured stories)
+ * 3. Articles (as batches complete)
  *
  * UX: Front page skeleton loads immediately, stories fade in as generated.
+ *
+ * Removed agents: DatelineAgent (use keyword-based), ContrarianAgent,
+ * ChiefEditorAgent, IntelligenceAgent
  */
 export async function POST(request: NextRequest) {
     const encoder = new TextEncoder();
@@ -81,37 +80,28 @@ export async function POST(request: NextRequest) {
                     reasoning
                 });
 
-                // 2. PARALLEL GENERATION: Headlines, Datelines, Articles
-                sendEvent('status', { phase: 'generation', message: 'Generating content in parallel...' });
+                // 2. GENERATE DATELINES (deterministic, instant)
+                const datelines: Datelines = {};
+                for (const story of blueprint.stories) {
+                    datelines[story.id] = generateDateline(story);
+                }
+
+                // 3. PARALLEL GENERATION: Headlines + Articles
+                sendEvent('status', { phase: 'generation', message: 'Generating headlines and articles...' });
 
                 const headlines: Headlines = {};
-                const datelines: Datelines = {};
                 const content: ArticleContent = {};
 
                 // Create agents
                 const headlineAgent = new HeadlineWriterAgent(apiKey);
-                const datelineAgent = new DatelineAgent(apiKey);
                 const articleAgent = new ArticleWriterAgent(apiKey);
 
-                // Run headline and dateline generation in parallel
-                const [headlineResult, datelineResult] = await Promise.all([
-                    headlineAgent.call({ blueprint }).then(result => {
-                        // Stream headlines as they complete
-                        Object.entries(result.headlines).forEach(([id, headline]) => {
-                            headlines[id] = headline;
-                        });
-                        sendEvent('headlines', { headlines: result.headlines });
-                        return result;
-                    }),
-                    datelineAgent.call({ markets: blueprint.stories }).then(result => {
-                        // Stream datelines as they complete
-                        Object.entries(result.datelines).forEach(([id, dateline]) => {
-                            datelines[id] = dateline;
-                        });
-                        sendEvent('datelines', { datelines: result.datelines });
-                        return result;
-                    })
-                ]);
+                // Run headline generation (articles will run after)
+                const headlineResult = await headlineAgent.call({ blueprint });
+                Object.entries(headlineResult.headlines).forEach(([id, headline]) => {
+                    headlines[id] = headline;
+                });
+                sendEvent('headlines', { headlines: headlineResult.headlines });
 
                 // Now generate articles (needs headlines and datelines)
                 sendEvent('status', { phase: 'articles', message: 'Writing articles...' });
@@ -138,18 +128,6 @@ export async function POST(request: NextRequest) {
                 });
                 sendEvent('articles', { content: articleResult.content });
 
-                // 3. CONTRARIAN TAKES (for featured stories only)
-                sendEvent('status', { phase: 'analysis', message: 'Generating contrarian analysis...' });
-
-                const contrarianAgent = new ContrarianAgent(apiKey);
-                const { takes: contrarianTakes } = await contrarianAgent.call({
-                    blueprint,
-                    headlines,
-                    featuredOnly: true,
-                });
-
-                sendEvent('contrarian', { takes: contrarianTakes });
-
                 // 4. COMPLETE
                 sendEvent('complete', {
                     timestamp: new Date().toISOString(),
@@ -157,7 +135,6 @@ export async function POST(request: NextRequest) {
                         totalStories: blueprint.stories.length,
                         headlines: Object.keys(headlines).length,
                         articles: Object.keys(content).length,
-                        contrarianTakes: Object.keys(contrarianTakes).length,
                     }
                 });
 
@@ -188,7 +165,8 @@ export async function GET() {
         status: 'ok',
         endpoint: 'editorial/stream',
         description: 'POST with { markets, groups } to start streaming editorial generation',
-        events: ['status', 'blueprint', 'headlines', 'datelines', 'articles', 'contrarian', 'complete', 'error']
+        events: ['status', 'blueprint', 'headlines', 'articles', 'complete', 'error'],
+        architecture: '3-agent system: EditorialDirector → HeadlineWriter → ArticleWriter'
     }), {
         headers: { 'Content-Type': 'application/json' }
     });

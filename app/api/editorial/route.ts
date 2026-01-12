@@ -2,13 +2,9 @@ import { NextResponse } from 'next/server';
 import { recordMarketsShown } from '../lib/market-history';
 import { EditorialDirectorAgent } from './editorial-director-agent';
 import { HeadlineWriterAgent } from './headline-agent';
-import { ArticleWriterAgent } from './article-agent';
-import { ChiefEditorAgent } from './chief-editor-agent';
-import { DatelineAgent } from './dateline-agent';
-import { ContrarianAgent } from './contrarian-agent';
-import { IntelligenceAgent, identifyMovingMarkets } from './intelligence-agent';
+import { ArticleWriterAgent, generateDateline } from './article-agent';
 import { getSupabase, EditionInsert } from '../lib/supabase';
-import { EditorialData, Market, MarketGroup, Datelines, FrontPageBlueprint } from '../../types';
+import { EditorialData, Market, MarketGroup, Datelines } from '../../types';
 
 export const revalidate = 0; // Disable Vercel cache since we manage it via Supabase
 
@@ -88,16 +84,18 @@ export async function getEditorial(markets: Market[], groups: MarketGroup[] = []
   const { blueprint, reasoning } = await editorialDirectorAgent.call({ markets });
   console.log(`Editorial Director reasoning: ${reasoning}`);
 
-  // 2. HEADLINE WRITER + DATELINE AGENT (parallel)
-  console.log('=== HEADLINE & DATELINE AGENTS (parallel) ===');
-  const [headlineResult, datelineResult] = await Promise.all([
-    new HeadlineWriterAgent(apiKey).call({ blueprint }),
-    new DatelineAgent(apiKey).call({ markets: blueprint.stories })
-  ]);
-  const { headlines } = headlineResult;
-  const { datelines } = datelineResult;
+  // 2. GENERATE DATELINES (deterministic, instant)
+  console.log('=== GENERATING DATELINES (deterministic) ===');
+  const datelines: Datelines = {};
+  for (const story of blueprint.stories) {
+    datelines[story.id] = generateDateline(story);
+  }
 
-  // 3. ARTICLE WRITER AGENT: Write the articles
+  // 3. HEADLINE WRITER AGENT
+  console.log('=== HEADLINE WRITER AGENT ===');
+  const { headlines } = await new HeadlineWriterAgent(apiKey).call({ blueprint });
+
+  // 4. ARTICLE WRITER AGENT: Write the articles
   console.log('=== ARTICLE WRITER AGENT ===');
   const articleAgent = new ArticleWriterAgent(apiKey);
   const { content, editorialNote } = await articleAgent.call({
@@ -107,57 +105,20 @@ export async function getEditorial(markets: Market[], groups: MarketGroup[] = []
     groupByMarketId,
   });
 
-  // 4. CHIEF EDITOR AGENT: Review and Polish
-  console.log('=== CHIEF EDITOR AGENT ===');
-  const editorAgent = new ChiefEditorAgent(apiKey);
-  const { reviewedContent, notes } = await editorAgent.call({
+  // Construct final response (simplified - no ChiefEditor, Contrarian, Intelligence)
+  const response: EditorialData = {
     blueprint,
     content,
     headlines,
-  });
-  const finalContent = reviewedContent;
-  console.log(`Chief Editor notes: ${notes}`);
-
-  // 5. CONTRARIAN AGENT: Devil's advocate takes for featured stories
-  console.log('=== CONTRARIAN AGENT ===');
-  const contrarianAgent = new ContrarianAgent(apiKey);
-  const { takes: contrarianTakes } = await contrarianAgent.call({
-    blueprint,
-    headlines,
-    featuredOnly: true
-  });
-  console.log(`Contrarian Agent: Generated ${Object.keys(contrarianTakes).length} contrarian takes`);
-
-  // 6. INTELLIGENCE AGENT: Analyze moving markets
-  console.log('=== INTELLIGENCE AGENT ===');
-  const movingMarkets = identifyMovingMarkets(
-    markets,
-    markets.reduce((acc, m) => {
-      // Use current price - priceChange as "old price" approximation
-      const oldPrice = m.yesPrice - (m.priceChange24h || 0) / 100;
-      acc[m.id] = oldPrice;
-      return acc;
-    }, {} as Record<string, number>),
-    5 // 5pp threshold
-  );
-  const intelligenceAgent = new IntelligenceAgent(apiKey);
-  const { briefs: intelligenceBriefs } = await intelligenceAgent.call({ movingMarkets });
-  console.log(`Intelligence Agent: Generated ${Object.keys(intelligenceBriefs).length} intelligence briefs`);
-
-  // Construct final response
-  const response: EditorialData = {
-    blueprint,
-    content: finalContent,
-    headlines,
     datelines,
-    contrarianTakes,
-    intelligenceBriefs,
+    contrarianTakes: {},  // Empty - agent removed
+    intelligenceBriefs: {},  // Empty - agent removed
     curatorReasoning: reasoning,
-    editorNotes: notes,
+    editorNotes: editorialNote || '',
     timestamp: new Date().toISOString(),
   };
 
-  // 6. SAVE TO DB (Cache) - Skip in development to avoid stale data
+  // 5. SAVE TO DB (Cache) - Skip in development to avoid stale data
   if (supabase && !isDev) {
     const insertData = {
       date_str: editionKey,

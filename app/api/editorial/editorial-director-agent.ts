@@ -47,11 +47,35 @@ function formatMarketForAI(market: Market, index: number, recentlyCovered: strin
 }
 
 /**
+ * Check if a market is actually sports (regardless of category)
+ * This catches miscategorized sports markets
+ */
+function isActuallySports(question: string): boolean {
+    const q = question.toLowerCase();
+    const sportsKeywords = [
+        'la liga', 'bundesliga', 'serie a', 'ligue 1', 'premier league', 'champions league',
+        'europa league', 'world cup', 'euro 2', 'copa america',
+        'nfl', 'nba', 'mlb', 'nhl', 'mls',
+        'super bowl', 'world series', 'stanley cup', 'finals',
+        'quarterback', 'touchdown', 'playoffs', 'mvp award',
+        'golf', 'masters tournament', 'pga', 'wimbledon', 'us open tennis',
+        'f1', 'formula 1', 'grand prix', 'ufc', 'boxing',
+        'win the 202', 'win the 203', // "Will X win the 2025-26 Season"
+        'relegat', // relegation
+    ];
+    return sportsKeywords.some(kw => q.includes(kw));
+}
+
+/**
  * Pre-filter to get diverse candidates before AI selection
  * This reduces cognitive load on the LLM while ensuring diversity
  */
 function getStratifiedCandidates(markets: Market[]): Market[] {
-    const activeMarkets = markets.filter(m => m.marketStatus !== 'dead_on_arrival');
+    // Filter out dead markets AND miscategorized sports
+    const activeMarkets = markets.filter(m =>
+        m.marketStatus !== 'dead_on_arrival' &&
+        !(m.category !== 'SPORTS' && isActuallySports(m.question)) // Remove miscategorized sports
+    );
 
     const getTop = (cat: MarketCategory, count: number) =>
         activeMarkets
@@ -100,21 +124,21 @@ function getStratifiedCandidates(markets: Market[]): Market[] {
         ...getTop('OTHER', 3),
         // BIG MOVERS - prioritize tech/crypto movers
         ...getMovers(25).filter(m => m.category !== 'SPORTS' && m.category !== 'CULTURE'),
-        // MINIMAL entertainment (max 1 each, only if high-scoring)
+        // MINIMAL entertainment - NO SPORTS, only 1 culture if really good
         ...getTop('CULTURE', 1),
-        ...getDiverseSports().slice(0, 1),
+        // REMOVED: ...getDiverseSports() - NO SPORTS AT ALL
     ];
 
     // Deduplicate while preserving order
+    // Also filter out any remaining sports that slipped through
     const seen = new Set<string>();
     const unique: Market[] = [];
-    let sportsCount = 0;
 
     for (const m of candidates) {
         if (!seen.has(m.id)) {
-            if (m.category === 'SPORTS') {
-                if (sportsCount >= 2) continue; // Hard cap: 2 sports max
-                sportsCount++;
+            // HARD BLOCK: No sports whatsoever
+            if (m.category === 'SPORTS' || isActuallySports(m.question)) {
+                continue;
             }
             seen.add(m.id);
             unique.push(m);
@@ -204,11 +228,18 @@ THE FRONT PAGE TEST: Would tech Twitter care about this?
 - "Will Lakers beat Celtics tonight?" NO — wrong audience
 
 ═══════════════════════════════════════════════════════════
-LAYOUT ASSIGNMENTS:
+LAYOUT ASSIGNMENTS (BE PRECISE):
 ═══════════════════════════════════════════════════════════
-• LEAD_STORY (1 only): Biggest global story. Highest stakes. Gets the banner headline.
-• FEATURE (5-7): Important stories deserving prominence and analysis.
-• BRIEF (15-20): Quick-hit stories. Newsworthy but don't need deep coverage.
+• LEAD_STORY (exactly 1): THE main story. Gets the giant banner headline and full article. Pick the most consequential, highest-stakes story.
+
+• FEATURE (exactly 5): Sidebar stories. These appear prominently on the right side. Each gets a headline and short article. Pick stories that are:
+  - High stakes but not THE biggest
+  - Good mix of categories (don't put 5 politics stories)
+  - Interesting enough to warrant analysis
+
+• BRIEF (15-25): Bottom grid. Only get headlines, no articles. These are the "also newsworthy" stories - important to track but don't need deep coverage.
+
+TOTAL: You must select 21-31 stories (1 LEAD + 5 FEATURE + 15-25 BRIEF)
 
 ═══════════════════════════════════════════════════════════
 DIVERSITY REQUIREMENTS — TECH TWITTER FIRST:
@@ -230,13 +261,20 @@ RESPOND WITH JSON ONLY:
 ═══════════════════════════════════════════════════════════
 {
   "selections": [
-    { "index": 0, "layout": "LEAD_STORY", "why": "15pp swing on Ukraine ceasefire talks" },
-    { "index": 3, "layout": "FEATURE", "why": "Fed decision in 3 days, 50/50 odds" },
-    { "index": 7, "layout": "BRIEF", "why": "Bitcoin crossing $100K threshold" },
-    ...
+    { "index": 0, "layout": "LEAD_STORY", "why": "15pp swing on Ukraine ceasefire - highest stakes" },
+    { "index": 3, "layout": "FEATURE", "why": "Fed decision imminent, contested odds" },
+    { "index": 5, "layout": "FEATURE", "why": "OpenAI valuation - founder/VC signal" },
+    { "index": 8, "layout": "FEATURE", "why": "BTC at key level, high volume" },
+    { "index": 12, "layout": "FEATURE", "why": "SpaceX Starship launch window" },
+    { "index": 15, "layout": "FEATURE", "why": "Anthropic funding round - AI competition" },
+    { "index": 7, "layout": "BRIEF", "why": "ETH staking yield" },
+    { "index": 9, "layout": "BRIEF", "why": "Tesla delivery numbers" },
+    ...more BRIEF entries...
   ],
-  "reasoning": "Selected 25 stories: 1 lead (Ukraine), 6 features (politics, tech), 18 briefs..."
-}`;
+  "reasoning": "Selected 25 stories: 1 LEAD (Ukraine), 5 FEATURE (Fed, OpenAI, BTC, SpaceX, Anthropic), 19 BRIEF..."
+}
+
+CRITICAL: You MUST have exactly 1 LEAD_STORY and exactly 5 FEATURE. The rest should be BRIEF.`;
 
         try {
             const response = await withRetry(async () => {
@@ -282,9 +320,24 @@ RESPOND WITH JSON ONLY:
             }
 
             // Ensure exactly 1 LEAD_STORY
-            const hasLead = uniqueStories.some(s => s.layout === 'LEAD_STORY');
-            if (!hasLead && uniqueStories.length > 0) {
+            const leadStories = uniqueStories.filter(s => s.layout === 'LEAD_STORY');
+            if (leadStories.length === 0 && uniqueStories.length > 0) {
                 uniqueStories[0].layout = 'LEAD_STORY';
+            } else if (leadStories.length > 1) {
+                // Demote extra leads to FEATURE
+                leadStories.slice(1).forEach(s => { s.layout = 'FEATURE'; });
+            }
+
+            // Ensure exactly 5 FEATURE stories for sidebar
+            const featureStories = uniqueStories.filter(s => s.layout === 'FEATURE');
+            if (featureStories.length < 5) {
+                // Promote top BRIEF stories to FEATURE
+                const briefStories = uniqueStories.filter(s => s.layout === 'BRIEF');
+                const needed = 5 - featureStories.length;
+                briefStories.slice(0, needed).forEach(s => { s.layout = 'FEATURE'; });
+            } else if (featureStories.length > 5) {
+                // Demote extra features to BRIEF
+                featureStories.slice(5).forEach(s => { s.layout = 'BRIEF'; });
             }
 
             // Cap at 40 stories
@@ -328,11 +381,18 @@ RESPOND WITH JSON ONLY:
                 m.category === 'TECH' || m.category === 'CRYPTO'
             ) || allFallback[0];
 
-            const fallbackStories = allFallback.map((m, i) => ({
-                ...m,
-                layout: (m.id === leadCandidate?.id ? 'LEAD_STORY' :
-                        i < 7 ? 'FEATURE' : 'BRIEF') as StoryLayout
-            }));
+            // Assign layouts: 1 LEAD, 5 FEATURE, rest BRIEF
+            const fallbackStories = allFallback.map((m, i) => {
+                let layout: StoryLayout;
+                if (m.id === leadCandidate?.id) {
+                    layout = 'LEAD_STORY';
+                } else if (i < 6) { // positions 1-5 (after lead) become FEATURE
+                    layout = 'FEATURE';
+                } else {
+                    layout = 'BRIEF';
+                }
+                return { ...m, layout };
+            });
 
             console.log(`Fallback selected: ${fallbackStories.length} stories (${newsworthy.length} newsworthy, ${entertainmentFiller.length} filler)`);
 

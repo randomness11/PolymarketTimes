@@ -63,13 +63,14 @@ async function fetchPriceHistory(conditionId: string): Promise<number | null> {
   }
 }
 
-export async function getMarkets(): Promise<MarketsResult> {
+export async function getMarkets(forceRefresh = false): Promise<MarketsResult> {
   const supabase = getSupabase();
   const CACHE_KEY = 'market_cache_latest';
   const CACHE_DURATION_MS = 3600 * 1000; // 1 hour
+  const isDev = process.env.NODE_ENV === 'development';
 
-  // 1. Try to get from Supabase Cache
-  if (supabase) {
+  // 1. Try to get from Supabase Cache (skip in dev or if force refresh)
+  if (supabase && !forceRefresh && !isDev) {
     const { data: cached } = await supabase
       .from('editions')
       .select('data, created_at')
@@ -85,6 +86,8 @@ export async function getMarkets(): Promise<MarketsResult> {
         console.log('Supabase cache stale, refreshing...');
       }
     }
+  } else if (isDev) {
+    console.log('DEV MODE: Skipping market cache, fetching fresh data');
   }
 
   // 2. Fetch fresh data (No Next.js Cache)
@@ -184,47 +187,9 @@ export async function getMarkets(): Promise<MarketsResult> {
     preProcessed.map(m => fetchPriceHistory(m.raw.conditionId))
   );
 
-  // Phase 3A: AI-POWERED CATEGORIZATION (AGENTIC) - Replace keyword matching
-  const useAICategorization = process.env.USE_AI_CATEGORIZATION === 'true';
-
-  if (useAICategorization && process.env.GEMINI_API_KEY) {
-    try {
-      console.log('Using AI-powered category classification...');
-      const { CategoryClassificationAgent } = await import('../editorial/category-agent');
-      const categoryAgent = new CategoryClassificationAgent(process.env.GEMINI_API_KEY);
-
-      const marketsForCategorization = preProcessed.map(m => ({
-        id: m.raw.conditionId,
-        question: m.raw.question,
-        description: m.raw.description || ''
-      }));
-
-      const { categories } = await categoryAgent.call({ markets: marketsForCategorization });
-
-      // Update categories in preprocessed data
-      for (const market of preProcessed) {
-        const aiCategory = categories.get(market.raw.conditionId);
-        if (aiCategory) {
-          market.category = aiCategory;
-        } else {
-          // Fallback to keyword-based
-          market.category = categorizeMarket(market.raw.question, market.raw.description || '');
-        }
-      }
-
-      console.log('AI categorization complete.');
-    } catch (error) {
-      console.error('AI categorization failed, using keyword fallback:', error);
-      // Fallback to keyword-based for all
-      for (const market of preProcessed) {
-        market.category = categorizeMarket(market.raw.question, market.raw.description || '');
-      }
-    }
-  } else {
-    // Use keyword-based categorization
-    for (const market of preProcessed) {
-      market.category = categorizeMarket(market.raw.question, market.raw.description || '');
-    }
+  // Phase 3A: CATEGORIZATION (deterministic keyword-based)
+  for (const market of preProcessed) {
+    market.category = categorizeMarket(market.raw.question, market.raw.description || '');
   }
 
   // Phase 3B: Complete scoring with fetched data (ALGORITHMIC FALLBACK)
@@ -271,60 +236,11 @@ export async function getMarkets(): Promise<MarketsResult> {
     };
   });
 
-  // Phase 4: AI-POWERED SCORING (AGENTIC) - Optionally override algorithmic scores
-  const useAIScoring = process.env.USE_AI_SCORING === 'true';
-
-  if (useAIScoring && process.env.GEMINI_API_KEY) {
-    try {
-      console.log('Using AI-powered market scoring...');
-      const { MarketScoringAgent } = await import('../editorial/market-scoring-agent');
-      const scoringAgent = new MarketScoringAgent(process.env.GEMINI_API_KEY);
-      const { scores } = await scoringAgent.call({ markets: processedMarkets });
-
-      // Override scores with AI evaluation
-      for (const market of processedMarkets) {
-        const aiScore = scores.get(market.id);
-        if (aiScore) {
-          market.scores = {
-            money: aiScore.newsworthiness,
-            certainty: aiScore.urgency,
-            speed: aiScore.impact,
-            interest: 1.0, // AI already factors this in
-            total: aiScore.total,
-          };
-        }
-      }
-
-      console.log('AI scoring complete. Markets re-ranked.');
-    } catch (error) {
-      console.error('AI scoring failed, using algorithmic fallback:', error);
-    }
-  }
-
+  // Phase 4: Sort by score (deterministic)
   processedMarkets.sort((a, b) => b.scores.total - a.scores.total);
 
-  // Phase 5: AI-POWERED MARKET GROUPING (AGENTIC) - Replace regex-based grouping
-  const useAIGrouping = process.env.USE_AI_GROUPING === 'true';
-  let groups: any[] = [];
-
-  if (useAIGrouping && process.env.GEMINI_API_KEY) {
-    try {
-      console.log('Using AI-powered market grouping...');
-      const { MarketGroupingAgent } = await import('../editorial/grouping-agent');
-      const groupingAgent = new MarketGroupingAgent(process.env.GEMINI_API_KEY);
-
-      const { groups: aiGroups } = await groupingAgent.call({ markets: processedMarkets });
-      groups = aiGroups;
-
-      console.log(`AI grouping complete: ${groups.length} groups created.`);
-    } catch (error) {
-      console.error('AI grouping failed, using algorithmic fallback:', error);
-      groups = groupMarkets(processedMarkets);
-    }
-  } else {
-    // Use algorithmic grouping
-    groups = groupMarkets(processedMarkets);
-  }
+  // Phase 5: Market grouping (deterministic)
+  const groups = groupMarkets(processedMarkets);
 
   console.log(`Markets API: Fetched ${rawMarkets.length} raw, ${processedMarkets.length} after filter.`);
 
@@ -369,9 +285,11 @@ export async function OPTIONS() {
   return new NextResponse(null, { headers: corsHeaders });
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const data = await getMarkets();
+    const url = new URL(request.url);
+    const forceRefresh = url.searchParams.get('force') === 'true';
+    const data = await getMarkets(forceRefresh);
     return NextResponse.json(data, { headers: corsHeaders });
   } catch (error) {
     console.error('Error in markets API:', error);
