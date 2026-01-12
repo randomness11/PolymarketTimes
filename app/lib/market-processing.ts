@@ -2,7 +2,80 @@ import { MarketCategory } from "../types";
 
 // Time window for market resolution
 export const MIN_DAYS_TO_RESOLUTION = 3;   // Too soon = already decided
-export const MAX_DAYS_TO_RESOLUTION = 90;  // Wider window for more options
+export const MAX_DAYS_TO_RESOLUTION = 365; // Expanded for future-focused content
+
+// Time horizon classification for markets
+export type TimeHorizon = 'IMMINENT' | 'NEAR_TERM' | 'MEDIUM_TERM' | 'LONG_TERM';
+
+export function classifyTimeHorizon(endDate: string | null): TimeHorizon {
+    if (!endDate) return 'LONG_TERM'; // No end date = open-ended future
+
+    const end = new Date(endDate);
+    const now = new Date();
+    const daysUntilResolution = (end.getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
+
+    if (daysUntilResolution < 7) return 'IMMINENT';
+    if (daysUntilResolution < 30) return 'NEAR_TERM';
+    if (daysUntilResolution < 180) return 'MEDIUM_TERM';
+    return 'LONG_TERM';
+}
+
+// Future market boost: Tech Twitter cares about what's COMING, not just what's happening
+// Boost MEDIUM_TERM and LONG_TERM for tech/crypto categories
+export const TIME_HORIZON_BOOST: Record<TimeHorizon, number> = {
+    IMMINENT: 1.0,      // No boost - near-term news
+    NEAR_TERM: 1.0,     // No boost - still news-cycle driven
+    MEDIUM_TERM: 1.15,  // 15% boost - sweet spot for predictions
+    LONG_TERM: 1.25,    // 25% boost - forward-looking alpha
+};
+
+// Categories that get the future boost (tech Twitter cares about future of these)
+export const FUTURE_BOOST_CATEGORIES: MarketCategory[] = ['TECH', 'CRYPTO', 'SCIENCE', 'BUSINESS'];
+
+// Tech Twitter entities - markets mentioning these get automatic score boost
+export const TECH_TWITTER_ENTITIES = [
+    // AI Labs
+    'openai', 'anthropic', 'deepmind', 'xai', 'mistral', 'cohere', 'inflection',
+    // Tech personalities
+    'sam altman', 'elon musk', 'dario amodei', 'demis hassabis', 'satya nadella', 'jensen huang', 'mark zuckerberg', 'sundar pichai',
+    // VCs & Founders ecosystem
+    'a16z', 'andreessen', 'sequoia', 'yc', 'y combinator', 'benchmark', 'accel', 'founders fund', 'thiel',
+    // Crypto ecosystem
+    'vitalik', 'sbf', 'cz', 'binance', 'coinbase', 'solana', 'ethereum', 'uniswap',
+    // Major tech
+    'nvidia', 'tsmc', 'apple', 'google', 'microsoft', 'meta', 'amazon', 'tesla', 'spacex',
+    // AI products/terms
+    'gpt-5', 'gpt5', 'agi', 'claude', 'gemini', 'llama', 'chatgpt',
+];
+
+export const TECH_ENTITY_BOOST = 1.2; // 20% boost for tech Twitter relevant entities
+
+export function calculateTechEntityBoost(question: string, description: string): number {
+    const text = `${question} ${description}`.toLowerCase();
+    const hasEntity = TECH_TWITTER_ENTITIES.some(entity => text.includes(entity));
+    return hasEntity ? TECH_ENTITY_BOOST : 1.0;
+}
+
+// Combined future + tech boost calculator
+export function calculateAudienceBoost(
+    question: string,
+    description: string,
+    category: MarketCategory,
+    endDate: string | null
+): number {
+    let boost = 1.0;
+
+    // Apply time horizon boost for future-focused categories
+    if (FUTURE_BOOST_CATEGORIES.includes(category)) {
+        const horizon = classifyTimeHorizon(endDate);
+        boost *= TIME_HORIZON_BOOST[horizon];
+    }
+
+    // Apply tech entity boost
+    boost *= calculateTechEntityBoost(question, description);
+
+    return boost;
+}
 
 // Short-term sports keywords (individual games to exclude)
 export const SHORT_TERM_SPORTS_PATTERNS = [
@@ -16,17 +89,17 @@ export const SHORT_TERM_SPORTS_PATTERNS = [
     /\bweek\s*\d+\b/i,      // "Week 15"
 ];
 
-// Editorial bias: THIS IS A NEWS PUBLICATION, NOT A CASINO
-// Prioritize stories with real-world consequences over entertainment betting
+// Editorial bias: TECH TWITTER & POLYMARKET NATIVE AUDIENCE
+// Prioritize tech, crypto, and forward-looking markets
 export const CATEGORY_INTEREST: Record<MarketCategory, number> = {
-    CONFLICT: 1.8,   // Wars, geopolitics - highest priority (affects millions)
-    POLITICS: 1.7,   // Elections, policy - shapes the world
-    TECH: 1.4,       // AI, breakthroughs - future-defining
-    SCIENCE: 1.3,    // Research, discoveries - important
-    BUSINESS: 1.1,   // M&A, major companies - economic impact
+    TECH: 1.8,       // AI, breakthroughs - THIS IS THE CORE AUDIENCE
+    CRYPTO: 1.6,     // DeFi, tokens, market structure - Polymarket natives care
+    BUSINESS: 1.4,   // Startups, IPOs, M&A, funding rounds
+    SCIENCE: 1.3,    // Research, space, breakthroughs
+    POLITICS: 1.2,   // Elections, policy - still matters but not the focus
+    CONFLICT: 1.0,   // Wars, geopolitics - important but not primary
     FINANCE: 1.0,    // Fed, rates - market-moving
-    CRYPTO: 0.8,     // Niche audience
-    CULTURE: 0.6,    // Entertainment - NOT NEWS (Oscar picks are gambling, not journalism)
+    CULTURE: 0.6,    // Entertainment - NOT NEWS
     SPORTS: 0.4,     // Individual games are NOT news
     OTHER: 0.7,
 };

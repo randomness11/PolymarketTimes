@@ -150,6 +150,7 @@ export default async function Home() {
         priceChange24h: freshData.priceChange24h,
         marketStatus: freshData.marketStatus,
         scores: freshData.scores,
+        timeHorizon: freshData.timeHorizon || story.timeHorizon || 'MEDIUM_TERM',
       });
     } else {
       stories.push(story);

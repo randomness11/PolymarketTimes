@@ -43,7 +43,7 @@ export default function Header({ cryptoPrices, timestamp }: HeaderProps) {
 
                 {/* Left Ear - Polydupe Ad - PERFECTED VINTAGE */}
                 <a
-                    href="http://bit.ly/49Pc0yo"
+                    href="https://bit.ly/49Pc0yo"
                     target="_blank"
                     rel="noopener noreferrer"
                     className={`hidden md:block w-52 transition-all duration-300 group relative ${isScrolled ? 'opacity-0 w-0 p-0 overflow-hidden' : 'opacity-100'}`}

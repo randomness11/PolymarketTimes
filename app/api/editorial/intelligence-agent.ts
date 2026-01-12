@@ -20,6 +20,10 @@ export interface IntelligenceBrief {
     analysis: string;        // 100-word intelligence brief
     nextMove: string;        // What would cause this to move further
     tradingImplication: string; // One-line actionable insight
+    // NEW: Future-focused fields
+    pathToResolution?: string;  // What needs to happen for YES/NO to win
+    keyMilestones?: string;     // Upcoming events/dates to watch
+    timeHorizon?: 'IMMINENT' | 'NEAR_TERM' | 'MEDIUM_TERM' | 'LONG_TERM';
 }
 
 export interface IntelligenceOutput {
@@ -89,12 +93,16 @@ DESCRIPTION: ${(market.description || '').substring(0, 300)}${newsHint}
 ═══════════════════════════════════════════════════════════`;
             }).join('\n\n');
 
-            const prompt = `You are an intelligence analyst at "The Polymarket Times".
+            const prompt = `You are an intelligence analyst at "The Polymarket Times" — serving tech Twitter and Polymarket traders.
 
-Your job: Explain WHY these prediction markets are moving.
+TODAY'S DATE: ${new Date().toISOString().split('T')[0]}
+
+Your job: Explain WHY these prediction markets are moving AND what needs to happen next.
 
 This is the most valuable analysis you can provide. Traders see the WHAT (price change).
-You explain the WHY (the catalyst, the context, the implications).
+You explain the WHY (catalyst) and the PATH FORWARD (what needs to happen for resolution).
+
+For future markets (30+ days out), focus heavily on the PATH TO RESOLUTION — what milestones, announcements, or events would move these markets.
 
 ═══════════════════════════════════════════════════════════
 MARKETS WITH SIGNIFICANT MOVEMENT:
@@ -109,7 +117,7 @@ FOR EACH MARKET, PROVIDE:
    What news event, announcement, or development likely caused this move?
    - Be specific: names, dates, events
    - If uncertain, state your best hypothesis
-   - Example: "Biden's debate performance on June 27th raised concerns about his candidacy."
+   - Example: "OpenAI's GPT-5 preview demo at DevDay shifted expectations."
 
 2. **CREDIBILITY** (HIGH / MEDIUM / LOW)
    Is this move justified by fundamentals, or an overreaction?
@@ -124,13 +132,20 @@ FOR EACH MARKET, PROVIDE:
    - What's at stake
    - Tone: Matt Levine meets intelligence briefing. Sharp, informed, slightly wry.
 
-4. **NEXT MOVE** (1 sentence)
-   What would cause this market to move significantly again?
-   - Example: "Watch for VP announcement; Harris would stabilize at 80%+, surprise pick could swing 15pp."
+4. **PATH_TO_RESOLUTION** (2-3 sentences) — CRITICAL FOR FUTURE MARKETS
+   What specifically needs to happen for YES to win? For NO to win?
+   - Example: "YES requires: (1) GPT-5 announcement by June, (2) public API access within 30 days. NO wins if: OpenAI pivots to enterprise-only or faces regulatory delay."
+   - Be concrete about milestones, not vague
 
-5. **TRADING IMPLICATION** (1 sentence)
+5. **KEY_MILESTONES** (comma-separated dates/events to watch)
+   - Example: "OpenAI DevDay (Nov), Anthropic Claude 4 launch (Q1), Google I/O (May)"
+   - Focus on upcoming catalysts that would move this market
+
+6. **NEXT MOVE** (1 sentence)
+   What would cause this market to move significantly again?
+
+7. **TRADING IMPLICATION** (1 sentence)
    Actionable insight for a sophisticated trader.
-   - Example: "Markets pricing in replacement; if Biden stays, YES is undervalued at current levels."
 
 ═══════════════════════════════════════════════════════════
 RESPOND WITH JSON ONLY:
@@ -141,6 +156,8 @@ RESPOND WITH JSON ONLY:
       "catalyst": "What caused the move",
       "credibility": "HIGH",
       "analysis": "The intelligence brief...",
+      "pathToResolution": "What needs to happen for YES/NO",
+      "keyMilestones": "Event 1 (Date), Event 2 (Date)",
       "nextMove": "What to watch for",
       "tradingImplication": "Actionable insight"
     },
@@ -164,6 +181,8 @@ RESPOND WITH JSON ONLY:
                         catalyst: string;
                         credibility: 'HIGH' | 'MEDIUM' | 'LOW';
                         analysis: string;
+                        pathToResolution?: string;
+                        keyMilestones?: string;
                         nextMove: string;
                         tradingImplication: string;
                     }>;
@@ -173,11 +192,20 @@ RESPOND WITH JSON ONLY:
                 batch.forEach((item, localIdx) => {
                     const brief = parsed.briefs?.[String(localIdx)];
                     if (brief) {
+                        // Calculate time horizon from market data
+                        const endDate = item.market.endDate ? new Date(item.market.endDate) : null;
+                        const daysOut = endDate ? Math.ceil((endDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : 365;
+                        const timeHorizon: 'IMMINENT' | 'NEAR_TERM' | 'MEDIUM_TERM' | 'LONG_TERM' =
+                            daysOut < 7 ? 'IMMINENT' : daysOut < 30 ? 'NEAR_TERM' : daysOut < 180 ? 'MEDIUM_TERM' : 'LONG_TERM';
+
                         allBriefs[item.market.id] = {
                             marketId: item.market.id,
                             catalyst: brief.catalyst || 'Catalyst unknown',
                             credibility: brief.credibility || 'MEDIUM',
                             analysis: brief.analysis || 'Analysis pending.',
+                            pathToResolution: brief.pathToResolution || undefined,
+                            keyMilestones: brief.keyMilestones || undefined,
+                            timeHorizon,
                             nextMove: brief.nextMove || 'Monitoring for developments.',
                             tradingImplication: brief.tradingImplication || 'Exercise caution.'
                         };

@@ -1,4 +1,4 @@
-import { Market, MarketCategory, FrontPageBlueprint, Story, StoryLayout } from '../../types';
+import { Market, MarketCategory, FrontPageBlueprint, Story, StoryLayout, TimeHorizon } from '../../types';
 import { Agent, createAIClient, extractJSON, withRetry, GEMINI_MODELS } from '../lib/agents';
 
 export interface EditorialDirectorInput {
@@ -32,9 +32,16 @@ function formatMarketForAI(market: Market, index: number, recentlyCovered: strin
         ? Math.ceil((endDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
         : null;
 
+    // Time horizon label for future-focused selection
+    const horizonLabel = market.timeHorizon || (daysToResolution
+        ? (daysToResolution < 7 ? 'IMMINENT' : daysToResolution < 30 ? 'NEAR_TERM' : daysToResolution < 180 ? 'MEDIUM_TERM' : 'LONG_TERM')
+        : 'LONG_TERM');
+
+    const futureTag = horizonLabel === 'MEDIUM_TERM' || horizonLabel === 'LONG_TERM' ? ' 🔮 FUTURE' : '';
+
     const recentFlag = recentlyCovered.includes(market.id) ? ' ⚠️ RECENTLY_COVERED' : '';
 
-    return `[${index}] [${market.category}] "${market.question}"${recentFlag}
+    return `[${index}] [${market.category}] [${horizonLabel}]${futureTag} "${market.question}"${recentFlag}
 ├─ Odds: ${leadingOdds}% ${yesWinning ? 'YES' : 'NO'} | Vol: ${vol} | 24h: ${priceChange}
 └─ Resolution: ${daysToResolution ? `${daysToResolution} days` : 'Open-ended'}`;
 }
@@ -80,18 +87,18 @@ function getStratifiedCandidates(markets: Market[]): Market[] {
         return picked;
     };
 
-    // Stratified selection by category — REAL NEWS ONLY
-    // Sports and Culture are NOT NEWS - exclude from main candidates
+    // Stratified selection by category — TECH TWITTER FIRST
+    // Prioritize tech, crypto, and future-focused markets
     const candidates = [
-        ...getTop('POLITICS', 15),     // Politics is THE news
-        ...getTop('CONFLICT', 12),     // Wars and geopolitics matter
-        ...getTop('TECH', 10),         // Tech/AI shapes the future
-        ...getTop('SCIENCE', 6),       // Important discoveries
-        ...getTop('BUSINESS', 5),      // Economic impact
-        ...getTop('FINANCE', 5),       // Fed, rates
-        ...getTop('CRYPTO', 4),        // Only if significant
+        ...getTop('TECH', 20),         // Tech/AI is THE core — most slots
+        ...getTop('CRYPTO', 12),       // Crypto is Polymarket native
+        ...getTop('BUSINESS', 8),      // Startups, funding, M&A
+        ...getTop('SCIENCE', 6),       // Space, biotech, breakthroughs
+        ...getTop('POLITICS', 6),      // Only tech-relevant policy
+        ...getTop('FINANCE', 4),       // Fed, rates when market-moving
+        ...getTop('CONFLICT', 3),      // Only if affecting markets
         ...getTop('OTHER', 3),
-        // BIG MOVERS - but only if they're real news
+        // BIG MOVERS - prioritize tech/crypto movers
         ...getMovers(25).filter(m => m.category !== 'SPORTS' && m.category !== 'CULTURE'),
         // MINIMAL entertainment (max 1 each, only if high-scoring)
         ...getTop('CULTURE', 1),
@@ -148,9 +155,13 @@ export class EditorialDirectorAgent implements Agent<EditorialDirectorInput, Edi
             .map((m, i) => formatMarketForAI(m, i, recentlyCovered))
             .join('\n\n');
 
-        const prompt = `You are the Editorial Director of "The Polymarket Times" — a prestigious publication that treats prediction markets as breaking news.
+        const prompt = `You are the Editorial Director of "The Polymarket Times" — the front page for tech Twitter and the Polymarket community.
+
+Your audience: Builders, founders, traders, and tech-obsessed readers who want to know what's COMING, not just what's happening.
 
 Your job: Select the day's front page AND assign each story's prominence.
+
+TODAY'S DATE: ${new Date().toISOString().split('T')[0]}
 
 ═══════════════════════════════════════════════════════════
 CANDIDATES (${candidates.length} markets):
@@ -161,38 +172,36 @@ ${marketsList}
 SELECTION CRITERIA (stories must meet 2+ to qualify):
 ═══════════════════════════════════════════════════════════
 
-1. 🔥 BREAKING — Large swings (>10pp in 24h), evolving situations
-2. ⏰ URGENT — Resolution approaching (<7 days), time-sensitive
-3. 🌍 HIGH IMPACT — Real-world consequences, affects millions
-4. ⚖️ CONTESTED — Close odds (40-60%) + high volume = drama
-5. 🎭 CULTURALLY SIGNIFICANT — Major events everyone discusses
-6. ✨ NOVELTY — Fresh angle, not recently covered
-7. 🎲 SURPRISE — Consensus-defying movement (odds moving against volume)
+1. 🔮 FUTURE-DEFINING — Markets about what's COMING (3-12 months out). AI milestones, product launches, funding rounds. Tech Twitter wants to know the future.
+2. 🔥 BREAKING — Large swings (>10pp in 24h), evolving situations
+3. 🤖 TECH/AI — OpenAI, Anthropic, Google AI, Apple, Tesla, SpaceX, semiconductors. These get priority.
+4. 💰 CRYPTO MOVES — BTC, ETH, SOL, major DeFi, protocol upgrades, regulatory clarity
+5. ⚖️ CONTESTED — Close odds (40-60%) + high volume = drama and alpha
+6. 🚀 FOUNDER/VC — Markets about Elon, Altman, a16z, YC companies, major raises
+7. ✨ NOVELTY — Fresh angle, not recently covered
+8. 🎲 CONTRARIAN SIGNAL — Odds moving against volume (smart money divergence)
 
 ═══════════════════════════════════════════════════════════
 WHAT TO AVOID — BE RUTHLESS:
 ═══════════════════════════════════════════════════════════
 ❌ ENTERTAINMENT BETTING: Oscar predictions, Grammy picks, award show outcomes
-   → These are GAMBLING, not NEWS. Would the NYT front page cover "Who wins Best Actor?"
-   → Exception: Only if there's a REAL STORY (controversy, historic moment)
+   → These are GAMBLING, not ALPHA.
 
-❌ SPORTS GAMES: Individual matchups, weekly games, division races
-   → Super Bowl winner? Maybe. "Will Chiefs beat Ravens on Sunday?" NEVER.
+❌ SPORTS GAMES: Individual matchups, weekly games
+   → Unless it's a major championship with cultural crossover
 
-❌ PURE SPECULATION: "Will X reach Y price by Z date?" with no catalyst
-   → Bitcoin at $150K by March is not news unless something is HAPPENING
+❌ NEAR-TERM ONLY MARKETS: Prefer markets 30+ days out
+   → Exception: Breaking news with >10pp swings
 
-❌ Stale markets (no movement, no urgency, nothing happened)
-
-❌ Far-out resolutions (>90 days) unless it's a major ongoing story
+❌ NO-CATALYST NOISE: Markets with no movement AND no clear resolution path
 
 ❌ Markets marked ⚠️ RECENTLY_COVERED (unless major update)
 
-THE FRONT PAGE TEST: Would a serious newspaper editor put this on page 1?
-- War in Ukraine? YES
-- Fed rate decision? YES
-- Presidential election? YES
-- "Will Timothée Chalamet win Best Actor?" NO — that's entertainment trivia
+THE FRONT PAGE TEST: Would tech Twitter care about this?
+- "Will GPT-5 ship by Q3?" YES — future-defining
+- "OpenAI $300B valuation?" YES — founder/VC signal
+- "BTC ETF approval?" YES — crypto native
+- "Will Lakers beat Celtics tonight?" NO — wrong audience
 
 ═══════════════════════════════════════════════════════════
 LAYOUT ASSIGNMENTS:
@@ -202,17 +211,19 @@ LAYOUT ASSIGNMENTS:
 • BRIEF (15-20): Quick-hit stories. Newsworthy but don't need deep coverage.
 
 ═══════════════════════════════════════════════════════════
-DIVERSITY REQUIREMENTS — REAL NEWS FIRST:
+DIVERSITY REQUIREMENTS — TECH TWITTER FIRST:
 ═══════════════════════════════════════════════════════════
 Your front page MUST prioritize:
-- 6-8 POLITICS (elections, government, policy) — THIS IS THE NEWS
-- 4-6 CONFLICT (wars, geopolitics, international) — WORLD-SHAPING
-- 4-5 TECH (AI, breakthroughs, major companies) — FUTURE-DEFINING
-- 2-3 SCIENCE (research, discoveries, space)
-- 2-3 BUSINESS/FINANCE (Fed, economy, major deals)
-- 1-2 CRYPTO (only if major movement or news)
-- MAX 2 CULTURE — and ONLY if genuinely newsworthy (historic, controversial)
-- MAX 1 SPORTS — championship/playoff level only, NO regular season games
+- 8-10 TECH (AI labs, products, breakthroughs, major companies) — THIS IS THE CORE
+- 4-6 CRYPTO (BTC, ETH, DeFi, protocol news, regulatory) — POLYMARKET NATIVE
+- 3-4 BUSINESS (startups, IPOs, M&A, funding rounds, founder moves)
+- 2-3 SCIENCE (space, biotech, breakthroughs)
+- 2-3 POLITICS (only if tech/crypto relevant: regulation, antitrust, trade)
+- 1-2 FINANCE (Fed, rates — but only when market-moving)
+- MAX 1 CONFLICT — unless directly affecting tech/markets
+- MAX 1 CULTURE/SPORTS — only if genuinely viral on tech Twitter
+
+FUTURE FOCUS: At least 30% of stories should resolve 30+ days from now.
 
 ═══════════════════════════════════════════════════════════
 RESPOND WITH JSON ONLY:

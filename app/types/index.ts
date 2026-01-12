@@ -10,6 +10,8 @@ export type MarketCategory =
     | 'BUSINESS'
     | 'OTHER';
 
+export type TimeHorizon = 'IMMINENT' | 'NEAR_TERM' | 'MEDIUM_TERM' | 'LONG_TERM';
+
 export interface Market {
     id: string;
     question: string;
@@ -25,6 +27,7 @@ export interface Market {
     endDate: string | null;
     image: string | null;
     category: MarketCategory;
+    timeHorizon: TimeHorizon;
     marketStatus: 'confirmed' | 'dead_on_arrival' | 'chaos' | 'contested';
     scores: {
         money: number;
@@ -93,6 +96,10 @@ export interface IntelligenceBrief {
     analysis: string;
     nextMove: string;
     tradingImplication: string;
+    // Future-focused fields
+    pathToResolution?: string;  // What needs to happen for YES/NO to win
+    keyMilestones?: string;     // Upcoming events/dates to watch
+    timeHorizon?: TimeHorizon;
 }
 
 export interface EditorialData {

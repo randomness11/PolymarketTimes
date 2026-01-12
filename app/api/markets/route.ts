@@ -8,7 +8,10 @@ import {
   normalizeVolume,
   determineMarketStatus,
   CATEGORY_INTEREST,
-  isShortTermSportsBet
+  isShortTermSportsBet,
+  calculateAudienceBoost,
+  classifyTimeHorizon,
+  TimeHorizon
 } from '../../lib/market-processing';
 import { Market, MarketCategory, MarketGroup } from '../../types';
 
@@ -234,7 +237,16 @@ export async function getMarkets(): Promise<MarketsResult> {
     const speed = calculateSpeed(priceChange24h);
     const interest = CATEGORY_INTEREST[market.category];
 
-    const total = (money * 0.35 + certainty * 0.35 + speed * 0.30) * interest;
+    // NEW: Apply audience boost (future markets + tech entities)
+    const audienceBoost = calculateAudienceBoost(
+      market.raw.question,
+      market.raw.description || '',
+      market.category,
+      market.raw.endDate || null
+    );
+    const timeHorizon = classifyTimeHorizon(market.raw.endDate || null);
+
+    const total = (money * 0.35 + certainty * 0.35 + speed * 0.30) * interest * audienceBoost;
 
     const marketStatus = determineMarketStatus(market.yesPrice, priceChange24h);
 
@@ -254,6 +266,7 @@ export async function getMarkets(): Promise<MarketsResult> {
       image: market.raw.image || null,
       scores: { money, certainty, speed, interest, total },
       category: market.category,
+      timeHorizon,
       marketStatus,
     };
   });
