@@ -3,6 +3,7 @@ import { recordMarketsShown } from '../lib/market-history';
 import { EditorialDirectorAgent } from './editorial-director-agent';
 import { HeadlineWriterAgent } from './headline-agent';
 import { ArticleWriterAgent, generateDateline } from './article-agent';
+import { ContrarianAgent } from './contrarian-agent';
 import { getSupabase, EditionInsert } from '../lib/supabase';
 import { EditorialData, Market, MarketGroup, Datelines } from '../../types';
 
@@ -105,14 +106,24 @@ export async function getEditorial(markets: Market[], groups: MarketGroup[] = []
     groupByMarketId,
   });
 
-  // Construct final response (simplified - no ChiefEditor, Contrarian, Intelligence)
+  // 5. CONTRARIAN AGENT: Alpha signals for featured stories
+  console.log('=== CONTRARIAN AGENT (Alpha Signals) ===');
+  const contrarianAgent = new ContrarianAgent(apiKey);
+  const { takes: contrarianTakes } = await contrarianAgent.call({
+    blueprint,
+    headlines,
+    featuredOnly: true
+  });
+  console.log(`Contrarian Agent: Generated ${Object.keys(contrarianTakes).length} alpha signals`);
+
+  // Construct final response
   const response: EditorialData = {
     blueprint,
     content,
     headlines,
     datelines,
-    contrarianTakes: {},  // Empty - agent removed
-    intelligenceBriefs: {},  // Empty - agent removed
+    contrarianTakes,
+    intelligenceBriefs: {},  // Intelligence agent removed for speed
     curatorReasoning: reasoning,
     editorNotes: editorialNote || '',
     timestamp: new Date().toISOString(),

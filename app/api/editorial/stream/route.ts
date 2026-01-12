@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { EditorialDirectorAgent } from '../editorial-director-agent';
 import { HeadlineWriterAgent } from '../headline-agent';
 import { ArticleWriterAgent, generateDateline } from '../article-agent';
+import { ContrarianAgent } from '../contrarian-agent';
 import { Market, MarketGroup, Story, Headlines, Datelines, ArticleContent } from '../../../types';
 
 export const runtime = 'edge'; // Use edge runtime for streaming
@@ -128,13 +129,24 @@ export async function POST(request: NextRequest) {
                 });
                 sendEvent('articles', { content: articleResult.content });
 
-                // 4. COMPLETE
+                // 4. CONTRARIAN AGENT (Alpha Signals)
+                sendEvent('status', { phase: 'alpha', message: 'Generating alpha signals...' });
+                const contrarianAgent = new ContrarianAgent(apiKey);
+                const { takes: contrarianTakes } = await contrarianAgent.call({
+                    blueprint,
+                    headlines,
+                    featuredOnly: true
+                });
+                sendEvent('contrarian', { takes: contrarianTakes });
+
+                // 5. COMPLETE
                 sendEvent('complete', {
                     timestamp: new Date().toISOString(),
                     stats: {
                         totalStories: blueprint.stories.length,
                         headlines: Object.keys(headlines).length,
                         articles: Object.keys(content).length,
+                        alphaSignals: Object.keys(contrarianTakes).length,
                     }
                 });
 
@@ -165,8 +177,8 @@ export async function GET() {
         status: 'ok',
         endpoint: 'editorial/stream',
         description: 'POST with { markets, groups } to start streaming editorial generation',
-        events: ['status', 'blueprint', 'headlines', 'articles', 'complete', 'error'],
-        architecture: '3-agent system: EditorialDirector → HeadlineWriter → ArticleWriter'
+        events: ['status', 'blueprint', 'headlines', 'articles', 'contrarian', 'complete', 'error'],
+        architecture: '4-agent system: EditorialDirector → HeadlineWriter → ArticleWriter → Contrarian (Alpha)'
     }), {
         headers: { 'Content-Type': 'application/json' }
     });
