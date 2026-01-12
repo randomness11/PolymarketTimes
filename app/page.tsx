@@ -269,7 +269,7 @@ export default async function Home() {
 
   return (
     <div className="min-h-screen p-2 md:p-8 max-w-[1600px] mx-auto bg-[#f4f1ea] overflow-x-hidden">
-      <MarketTicker markets={tickerMarkets} />
+        <MarketTicker markets={tickerMarkets} />
       <Header cryptoPrices={cryptoData || undefined} timestamp={editorialData?.timestamp} />
 
       {/* Fallback mode notification */}
