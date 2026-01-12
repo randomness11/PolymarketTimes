@@ -123,7 +123,7 @@ export class ArticleWriterAgent implements Agent<ArticleWriterInput, ArticleWrit
         });
 
         // Batch processing - smaller batches to avoid token limits
-        const BATCH_SIZE = 7;
+        const BATCH_SIZE = 3; // Reduced from 7 to prevent truncation
         const batches = [];
         for (let i = 0; i < allSections.length; i += BATCH_SIZE) {
             batches.push(allSections.slice(i, i + BATCH_SIZE));

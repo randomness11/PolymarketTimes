@@ -54,7 +54,7 @@ export class ChiefEditorAgent implements Agent<ChiefEditorInput, ChiefEditorOutp
 
         const storyMap = new Map(blueprint.stories.map(s => [s.id, s]));
         const marketIds = Object.keys(content);
-        const BATCH_SIZE = 7;
+        const BATCH_SIZE = 4; // Reduced from 7 to prevent truncation
         const batches: string[][] = [];
 
         for (let i = 0; i < marketIds.length; i += BATCH_SIZE) {

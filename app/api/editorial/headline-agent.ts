@@ -64,7 +64,7 @@ export class HeadlineWriterAgent implements Agent<HeadlineWriterInput, HeadlineW
         const client = createAIClient(this.apiKey);
 
         // Process in larger batches with Gemini Flash's 1M token context
-        const BATCH_SIZE = 15;
+        const BATCH_SIZE = 8; // Reduced from 15 to prevent truncation
         const batches: Market[][] = [];
         for (let i = 0; i < stories.length; i += BATCH_SIZE) {
             batches.push(stories.slice(i, i + BATCH_SIZE));
