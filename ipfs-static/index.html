@@ -41,45 +41,45 @@
         }
 
         .container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
-            padding: 1rem;
+            padding: 0.5rem;
         }
 
         /* Header */
         header {
-            border-bottom: 4px double var(--border);
-            padding: 1rem 0;
-            margin-bottom: 2rem;
-            text-align: center;
+            border-bottom: 4px solid var(--border);
+            margin-bottom: 1.5rem;
         }
 
         .meta-bar {
             display: flex;
             justify-content: space-between;
-            font-size: 0.7rem;
+            font-size: 0.65rem;
             font-weight: bold;
-            letter-spacing: 0.1em;
+            letter-spacing: 0.15em;
             border-bottom: 1px solid var(--border);
-            padding-bottom: 0.5rem;
-            margin-bottom: 1rem;
+            padding: 0.4rem 0.5rem;
+            text-transform: uppercase;
         }
 
         .masthead {
-            padding: 2rem 0;
+            padding: 1.5rem 0;
+            text-align: center;
         }
 
-        .masthead h1 {
-            font-size: clamp(2.5rem, 8vw, 5rem);
-            line-height: 1;
+        .masthead .tagline {
+            font-size: 0.6rem;
+            letter-spacing: 0.25em;
+            text-transform: uppercase;
+            color: #666;
             margin-bottom: 0.5rem;
         }
 
-        .tagline {
-            font-size: 0.7rem;
-            letter-spacing: 0.2em;
-            text-transform: uppercase;
-            color: #666;
+        .masthead h1 {
+            font-size: clamp(3rem, 10vw, 6rem);
+            line-height: 1;
+            margin-bottom: 0.5rem;
         }
 
         .edition-info {
@@ -87,8 +87,7 @@
             align-items: center;
             justify-content: center;
             gap: 1rem;
-            margin-top: 1rem;
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             font-weight: bold;
             text-transform: uppercase;
             letter-spacing: 0.1em;
@@ -100,15 +99,314 @@
             background: var(--border);
         }
 
+        /* Main Layout */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+            border-bottom: 4px double var(--border);
+            padding-bottom: 1.5rem;
+        }
+
+        @media (min-width: 768px) {
+            .main-grid {
+                grid-template-columns: 2fr 5fr 2fr;
+            }
+        }
+
+        /* Sidebar */
+        .sidebar {
+            border-right: 1px solid var(--border);
+            padding-right: 1rem;
+        }
+
+        .sidebar-section {
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .sidebar-section h3 {
+            font-family: 'Playfair Display', serif;
+            font-size: 0.7rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 0.3rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .brief-item {
+            padding: 0.5rem 0;
+            border-bottom: 1px dotted #ccc;
+        }
+
+        .brief-item:last-child {
+            border-bottom: none;
+        }
+
+        .brief-item a {
+            font-family: 'Playfair Display', serif;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: inherit;
+            text-decoration: none;
+            line-height: 1.3;
+            display: block;
+        }
+
+        .brief-item a:hover {
+            text-decoration: underline;
+        }
+
+        .brief-item .odds {
+            font-family: monospace;
+            font-size: 0.75rem;
+            font-weight: bold;
+            color: #166534;
+        }
+
+        /* Lead Story */
+        .lead-story {
+            border-right: 1px solid var(--border);
+            padding-right: 1.5rem;
+        }
+
+        .lead-story .category {
+            display: inline-block;
+            font-size: 0.6rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            border: 1px solid var(--border);
+            padding: 0.15rem 0.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .lead-story h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(1.75rem, 4vw, 2.5rem);
+            font-weight: 900;
+            line-height: 1.15;
+            margin-bottom: 1rem;
+        }
+
+        .lead-story h2 a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        .lead-story h2 a:hover {
+            text-decoration: underline;
+        }
+
+        .lead-story .byline {
+            font-size: 0.7rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid #ccc;
+        }
+
+        .lead-story .lead-image {
+            width: 100%;
+            height: auto;
+            margin-bottom: 1rem;
+            border: 1px solid var(--border);
+        }
+
+        .lead-story .market-box {
+            background: #fff;
+            border: 2px solid var(--border);
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .lead-story .market-box .odds-display {
+            font-family: monospace;
+            font-size: 2.5rem;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .lead-story .market-box .odds-display.bullish {
+            color: #166534;
+        }
+
+        .lead-story .market-box .odds-display.bearish {
+            color: #991b1b;
+        }
+
+        .lead-story .market-box .change {
+            text-align: center;
+            font-size: 0.8rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 2px;
+            display: inline-block;
+            margin: 0.5rem auto;
+        }
+
+        .lead-story .market-box .change.up {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .lead-story .market-box .change.down {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .lead-story .content {
+            font-size: 1.05rem;
+            line-height: 1.8;
+            text-align: justify;
+        }
+
+        .lead-story .content::first-letter {
+            font-size: 4rem;
+            font-family: 'Playfair Display', serif;
+            font-weight: 900;
+            float: left;
+            line-height: 0.8;
+            margin-right: 0.5rem;
+            margin-top: 0.1rem;
+        }
+
+        /* Right Sidebar */
+        .right-sidebar {
+            padding-left: 1rem;
+        }
+
+        .widget {
+            border: 1px solid var(--border);
+            padding: 1rem;
+            margin-bottom: 1rem;
+            background: #fff;
+        }
+
+        .widget h4 {
+            font-family: 'Playfair Display', serif;
+            font-size: 0.7rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 0.3rem;
+            margin-bottom: 0.75rem;
+        }
+
+        /* Bottom Grid */
+        .bottom-section {
+            padding: 1.5rem 0;
+        }
+
+        .bottom-section h3 {
+            font-family: 'UnifrakturMaguntia', serif;
+            font-size: 1.5rem;
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .stories-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 1rem;
+        }
+
+        .story-card {
+            border: 1px solid var(--border);
+            padding: 1rem;
+            background: white;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .story-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .story-card .category {
+            font-size: 0.55rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            border: 1px solid var(--border);
+            padding: 0.1rem 0.4rem;
+            display: inline-block;
+            margin-bottom: 0.5rem;
+        }
+
+        .story-card h4 {
+            font-family: 'Playfair Display', serif;
+            font-size: 0.95rem;
+            font-weight: 700;
+            line-height: 1.3;
+            margin-bottom: 0.5rem;
+        }
+
+        .story-card h4 a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        .story-card h4 a:hover {
+            text-decoration: underline;
+        }
+
+        .story-card .odds {
+            font-family: monospace;
+            font-size: 1.1rem;
+            font-weight: bold;
+        }
+
+        .story-card .odds.bullish { color: #166534; }
+        .story-card .odds.bearish { color: #991b1b; }
+
+        .story-card .meta {
+            font-size: 0.7rem;
+            color: #666;
+            margin-top: 0.5rem;
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 2rem 1rem;
+            border-top: 4px double var(--border);
+            margin-top: 1.5rem;
+        }
+
+        footer p {
+            font-size: 0.75rem;
+            color: #666;
+            margin-bottom: 0.5rem;
+        }
+
+        footer a {
+            color: inherit;
+        }
+
+        .ipfs-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: #1a1a1a;
+            color: #f4f1ea;
+            padding: 0.5rem 1rem;
+            font-size: 0.65rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-top: 1rem;
+        }
+
         /* Loading State */
         .loading {
             text-align: center;
             padding: 4rem 2rem;
-        }
-
-        .loading h2 {
-            font-size: 1.5rem;
-            margin-bottom: 1rem;
         }
 
         .spinner {
@@ -125,179 +423,10 @@
             to { transform: rotate(360deg); }
         }
 
-        /* Stories Grid */
-        .stories-section {
-            border-bottom: 4px double var(--border);
-            padding: 2rem 0;
-        }
-
-        .section-header {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .section-header h2 {
-            font-size: 1.5rem;
-        }
-
-        .section-header .ornament {
-            flex: 1;
-            height: 1px;
-            background: linear-gradient(to right, transparent, var(--border));
-        }
-
-        .stories-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 1.5rem;
-        }
-
-        /* Story Card */
-        .story-card {
-            border: 1px solid var(--border);
-            padding: 1rem;
-            background: white;
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-
-        .story-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
-        }
-
-        .story-card .category {
-            font-size: 0.6rem;
-            font-weight: bold;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            border: 1px solid var(--border);
-            padding: 0.1rem 0.4rem;
-            display: inline-block;
-            margin-bottom: 0.5rem;
-        }
-
-        .story-card h3 {
-            font-family: 'Playfair Display', serif;
-            font-size: 1.1rem;
-            font-weight: 700;
-            line-height: 1.3;
-            margin-bottom: 0.5rem;
-        }
-
-        .story-card h3 a {
-            color: inherit;
-            text-decoration: none;
-        }
-
-        .story-card h3 a:hover {
-            text-decoration: underline;
-        }
-
-        .story-card .odds {
-            font-family: monospace;
-            font-size: 1.25rem;
-            font-weight: bold;
-            margin-bottom: 0.5rem;
-        }
-
-        .story-card .odds.bullish {
-            color: #166534;
-        }
-
-        .story-card .odds.bearish {
-            color: #991b1b;
-        }
-
-        .story-card .change {
-            font-size: 0.75rem;
-            padding: 0.2rem 0.5rem;
-            border-radius: 2px;
-            display: inline-block;
-        }
-
-        .story-card .change.up {
-            background: #dcfce7;
-            color: #166534;
-        }
-
-        .story-card .change.down {
-            background: #fee2e2;
-            color: #991b1b;
-        }
-
-        .story-card .volume {
-            font-size: 0.7rem;
-            color: #666;
-            margin-top: 0.5rem;
-        }
-
-        /* Lead Story */
-        .lead-story {
-            grid-column: 1 / -1;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 2rem;
-            padding: 2rem;
-            border: 2px solid var(--border);
-        }
-
-        @media (max-width: 768px) {
-            .lead-story {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        .lead-story h3 {
-            font-size: 2rem;
-            line-height: 1.2;
-        }
-
-        .lead-story .odds {
-            font-size: 2rem;
-        }
-
-        .lead-story .content {
-            font-size: 1rem;
-            line-height: 1.8;
-        }
-
-        /* Footer */
-        footer {
-            text-align: center;
-            padding: 2rem;
-            font-size: 0.75rem;
-            color: #666;
-        }
-
-        footer a {
-            color: inherit;
-        }
-
-        .decentralized-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            background: #1a1a1a;
-            color: #f4f1ea;
-            padding: 0.5rem 1rem;
-            font-size: 0.7rem;
-            font-weight: bold;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            margin-top: 1rem;
-        }
-
         /* Error State */
         .error {
             text-align: center;
             padding: 4rem 2rem;
-            color: #991b1b;
-        }
-
-        .error h2 {
-            margin-bottom: 1rem;
         }
 
         .retry-btn {
@@ -313,6 +442,17 @@
 
         .retry-btn:hover {
             background: #333;
+        }
+
+        /* Hide on mobile */
+        @media (max-width: 767px) {
+            .sidebar, .right-sidebar {
+                display: none;
+            }
+            .lead-story {
+                border-right: none;
+                padding-right: 0;
+            }
         }
     </style>
 </head>
@@ -338,7 +478,7 @@
 
         <main id="main-content">
             <div class="loading">
-                <h2 class="font-blackletter">Fetching Latest Markets...</h2>
+                <h2 class="font-blackletter" style="font-size: 1.75rem;">Fetching Latest Markets...</h2>
                 <div class="spinner"></div>
                 <p>Connecting to Polymarket Times API</p>
             </div>
@@ -346,8 +486,8 @@
 
         <footer>
             <p>Powered by <a href="https://polymarket.com" target="_blank">Polymarket</a> prediction markets</p>
-            <p>Main site: <a href="https://polymarketimes.com" target="_blank">polymarketimes.com</a></p>
-            <div class="decentralized-badge">
+            <p>Main site: <a href="https://www.polymarketimes.com" target="_blank">polymarketimes.com</a></p>
+            <div class="ipfs-badge">
                 <span>&#x1F517;</span>
                 <span>Hosted on IPFS &bull; polymarkettimes.eth</span>
             </div>
@@ -355,7 +495,7 @@
     </div>
 
     <script>
-        const API_BASE = 'https://polymarketimes.com';
+        const API_BASE = 'https://www.polymarketimes.com';
 
         // Set current date
         document.getElementById('current-date').textContent = new Date().toLocaleDateString('en-US', {
@@ -372,13 +512,13 @@
             return `$${vol.toFixed(0)}`;
         }
 
-        function renderStories(markets) {
+        function renderNewspaper(markets) {
             const main = document.getElementById('main-content');
 
             if (!markets || markets.length === 0) {
                 main.innerHTML = `
                     <div class="error">
-                        <h2>No Markets Available</h2>
+                        <h2 class="font-blackletter" style="font-size: 2rem;">The Printing Press is Jammed</h2>
                         <p>Unable to fetch market data at this time.</p>
                         <button class="retry-btn" onclick="loadData()">Try Again</button>
                     </div>
@@ -386,58 +526,97 @@
                 return;
             }
 
-            // Sort by volume
-            markets.sort((a, b) => (b.volume24hr || 0) - (a.volume24hr || 0));
+            // Sort by score/volume
+            markets.sort((a, b) => (b.scores?.total || b.volume24hr || 0) - (a.scores?.total || a.volume24hr || 0));
 
             const leadStory = markets[0];
-            const otherStories = markets.slice(1, 25);
+            const briefs = markets.slice(1, 6);
+            const bottomStories = markets.slice(6, 20);
 
             const leadOdds = Math.round(leadStory.yesPrice * 100);
             const leadChange = leadStory.priceChange24h || 0;
 
             let html = `
-                <section class="stories-section">
-                    <div class="section-header">
-                        <div class="ornament"></div>
-                        <span style="font-size: 1.5rem;">&#x2756;</span>
-                        <div class="ornament" style="background: linear-gradient(to left, transparent, var(--border));"></div>
-                    </div>
+                <div class="main-grid">
+                    <!-- Left Sidebar -->
+                    <aside class="sidebar">
+                        <div class="sidebar-section">
+                            <h3>Market Briefs</h3>
+                            ${briefs.map(m => `
+                                <div class="brief-item">
+                                    <a href="https://polymarket.com/event/${m.slug}" target="_blank">${m.question}</a>
+                                    <span class="odds">${Math.round(m.yesPrice * 100)}%</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </aside>
 
-                    <div class="stories-grid">
-                        <article class="story-card lead-story">
-                            <div>
-                                <span class="category">${leadStory.category || 'MARKETS'}</span>
-                                <h3><a href="https://polymarket.com/event/${leadStory.slug}" target="_blank">${leadStory.question}</a></h3>
-                                <div class="odds ${leadOdds >= 50 ? 'bullish' : 'bearish'}">${leadOdds}% YES</div>
+                    <!-- Lead Story -->
+                    <article class="lead-story">
+                        <span class="category">${leadStory.category || 'MARKETS'}</span>
+                        <h2><a href="https://polymarket.com/event/${leadStory.slug}" target="_blank">${leadStory.question}</a></h2>
+                        <div class="byline">By Polymarket Intelligence &bull; ${new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</div>
+
+                        ${leadStory.image ? `<img src="${leadStory.image}" alt="" class="lead-image">` : ''}
+
+                        <div class="market-box">
+                            <div class="odds-display ${leadOdds >= 50 ? 'bullish' : 'bearish'}">${leadOdds}% YES</div>
+                            <div style="text-align: center;">
                                 <span class="change ${leadChange >= 0 ? 'up' : 'down'}">
-                                    ${leadChange >= 0 ? '↑' : '↓'} ${Math.abs(leadChange).toFixed(1)}pp 24h
+                                    ${leadChange >= 0 ? '&#9650;' : '&#9660;'} ${Math.abs(leadChange).toFixed(1)}pp (24h)
                                 </span>
-                                <div class="volume">Volume: ${formatVolume(leadStory.volume24hr || 0)}</div>
                             </div>
-                            <div class="content">
-                                <p>${leadStory.description || 'Track this prediction market on Polymarket.'}</p>
+                            <div style="text-align: center; font-size: 0.75rem; color: #666; margin-top: 0.5rem;">
+                                Volume: ${formatVolume(leadStory.volume24hr || 0)}
                             </div>
-                        </article>
-            `;
+                        </div>
 
-            for (const market of otherStories) {
-                const odds = Math.round(market.yesPrice * 100);
-                const change = market.priceChange24h || 0;
-
-                html += `
-                    <article class="story-card">
-                        <span class="category">${market.category || 'MARKETS'}</span>
-                        <h3><a href="https://polymarket.com/event/${market.slug}" target="_blank">${market.question}</a></h3>
-                        <div class="odds ${odds >= 50 ? 'bullish' : 'bearish'}">${odds}%</div>
-                        <span class="change ${change >= 0 ? 'up' : 'down'}">
-                            ${change >= 0 ? '↑' : '↓'} ${Math.abs(change).toFixed(1)}pp
-                        </span>
-                        <div class="volume">Vol: ${formatVolume(market.volume24hr || 0)}</div>
+                        <div class="content">
+                            ${leadStory.description || 'Market participants are actively trading on this outcome. The current consensus suggests ' + (leadOdds >= 50 ? 'a favorable resolution' : 'significant uncertainty remains') + '. Traders are advised to conduct their own research and consider the various factors that may influence the final outcome.'}
+                        </div>
                     </article>
-                `;
-            }
 
-            html += `
+                    <!-- Right Sidebar -->
+                    <aside class="right-sidebar">
+                        <div class="widget">
+                            <h4>Top Movers</h4>
+                            ${markets.filter(m => m.priceChange24h).sort((a, b) => Math.abs(b.priceChange24h || 0) - Math.abs(a.priceChange24h || 0)).slice(0, 4).map(m => `
+                                <div style="padding: 0.5rem 0; border-bottom: 1px dotted #ccc; font-size: 0.8rem;">
+                                    <div style="font-weight: bold; line-height: 1.3;">${m.question.slice(0, 50)}${m.question.length > 50 ? '...' : ''}</div>
+                                    <span style="color: ${(m.priceChange24h || 0) >= 0 ? '#166534' : '#991b1b'}; font-family: monospace;">
+                                        ${(m.priceChange24h || 0) >= 0 ? '+' : ''}${(m.priceChange24h || 0).toFixed(1)}pp
+                                    </span>
+                                </div>
+                            `).join('')}
+                        </div>
+
+                        <div class="widget">
+                            <h4>High Volume</h4>
+                            ${[...markets].sort((a, b) => (b.volume24hr || 0) - (a.volume24hr || 0)).slice(0, 3).map(m => `
+                                <div style="padding: 0.5rem 0; border-bottom: 1px dotted #ccc; font-size: 0.8rem;">
+                                    <div style="font-weight: bold; line-height: 1.3;">${m.question.slice(0, 45)}${m.question.length > 45 ? '...' : ''}</div>
+                                    <span style="color: #666; font-family: monospace;">${formatVolume(m.volume24hr || 0)}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </aside>
+                </div>
+
+                <!-- Bottom Stories Grid -->
+                <section class="bottom-section">
+                    <h3>More Market Intelligence</h3>
+                    <div class="stories-grid">
+                        ${bottomStories.map(m => {
+                            const odds = Math.round(m.yesPrice * 100);
+                            return `
+                                <article class="story-card">
+                                    <span class="category">${m.category || 'MARKETS'}</span>
+                                    <h4><a href="https://polymarket.com/event/${m.slug}" target="_blank">${m.question}</a></h4>
+                                    <div class="odds ${odds >= 50 ? 'bullish' : 'bearish'}">${odds}%</div>
+                                    <div class="meta">Vol: ${formatVolume(m.volume24hr || 0)}</div>
+                                </article>
+                            `;
+                        }).join('')}
                     </div>
                 </section>
             `;
@@ -449,11 +628,11 @@
         function showError(message) {
             document.getElementById('main-content').innerHTML = `
                 <div class="error">
-                    <h2>Connection Error</h2>
+                    <h2 class="font-blackletter" style="font-size: 2rem;">Connection Error</h2>
                     <p>${message}</p>
                     <button class="retry-btn" onclick="loadData()">Try Again</button>
                     <p style="margin-top: 1rem; font-size: 0.8rem;">
-                        Or visit <a href="https://polymarketimes.com">polymarketimes.com</a> directly
+                        Or visit <a href="https://www.polymarketimes.com">polymarketimes.com</a> directly
                     </p>
                 </div>
             `;
@@ -462,7 +641,7 @@
         async function loadData() {
             document.getElementById('main-content').innerHTML = `
                 <div class="loading">
-                    <h2 class="font-blackletter">Fetching Latest Markets...</h2>
+                    <h2 class="font-blackletter" style="font-size: 1.75rem;">Fetching Latest Markets...</h2>
                     <div class="spinner"></div>
                     <p>Connecting to Polymarket Times API</p>
                 </div>
@@ -480,7 +659,7 @@
                 }
 
                 const data = await response.json();
-                renderStories(data.markets || []);
+                renderNewspaper(data.markets || []);
 
             } catch (error) {
                 console.error('Failed to load data:', error);
