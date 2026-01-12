@@ -4,6 +4,7 @@ import { EditorialDirectorAgent } from './editorial-director-agent';
 import { HeadlineWriterAgent } from './headline-agent';
 import { ArticleWriterAgent, generateDateline } from './article-agent';
 import { ContrarianAgent } from './contrarian-agent';
+import { IntelligenceAgent, identifyMovingMarkets } from './intelligence-agent';
 import { getSupabase, EditionInsert } from '../lib/supabase';
 import { EditorialData, Market, MarketGroup, Datelines } from '../../types';
 
@@ -116,6 +117,21 @@ export async function getEditorial(markets: Market[], groups: MarketGroup[] = []
   });
   console.log(`Contrarian Agent: Generated ${Object.keys(contrarianTakes).length} alpha signals`);
 
+  // 6. INTELLIGENCE AGENT: Analyze moving markets
+  console.log('=== INTELLIGENCE AGENT (Market Movers) ===');
+  const movingMarkets = identifyMovingMarkets(
+    markets,
+    markets.reduce((acc, m) => {
+      const oldPrice = m.yesPrice - (m.priceChange24h || 0) / 100;
+      acc[m.id] = oldPrice;
+      return acc;
+    }, {} as Record<string, number>),
+    5 // 5pp threshold
+  );
+  const intelligenceAgent = new IntelligenceAgent(apiKey);
+  const { briefs: intelligenceBriefs } = await intelligenceAgent.call({ movingMarkets });
+  console.log(`Intelligence Agent: Generated ${Object.keys(intelligenceBriefs).length} intelligence briefs`);
+
   // Construct final response
   const response: EditorialData = {
     blueprint,
@@ -123,7 +139,7 @@ export async function getEditorial(markets: Market[], groups: MarketGroup[] = []
     headlines,
     datelines,
     contrarianTakes,
-    intelligenceBriefs: {},  // Intelligence agent removed for speed
+    intelligenceBriefs,
     curatorReasoning: reasoning,
     editorNotes: editorialNote || '',
     timestamp: new Date().toISOString(),
