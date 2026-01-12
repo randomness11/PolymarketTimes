@@ -30,9 +30,9 @@ export default function Header({ cryptoPrices, timestamp }: HeaderProps) {
     }).toUpperCase();
 
     return (
-        <header className={`flex flex-col border-b-4 border-[var(--border)] mb-8 transition-all duration-300 z-50 bg-[var(--background)] ${isScrolled ? 'sticky top-0 shadow-xl dark:shadow-black/50' : 'relative'}`}>
+        <header className={`flex flex-col border-b-4 border-black mb-8 transition-all duration-300 z-50 bg-[#f4f1ea] ${isScrolled ? 'sticky top-0 shadow-xl' : 'relative'}`}>
             {/* Top Meta Bar */}
-            <div className={`flex justify-between items-center py-1 border-b border-[var(--border)] text-xs font-bold font-serif tracking-widest px-2 transition-all duration-300 ${isScrolled ? 'py-0.5 text-[10px]' : ''}`}>
+            <div className={`flex justify-between items-center py-1 border-b border-black text-xs font-bold font-serif tracking-widest px-2 transition-all duration-300 ${isScrolled ? 'py-0.5 text-[10px]' : ''}`}>
                 <div>VOL. CXXVII... No. 42,109</div>
                 <div>NEW YORK, {currentDate}</div>
                 <div>PRICE ONE DOLLAR ($1.00)</div>
@@ -109,21 +109,21 @@ export default function Header({ cryptoPrices, timestamp }: HeaderProps) {
                     <div className={`text-[9px] uppercase tracking-[0.2em] mb-2 font-sans text-gray-500 transition-all duration-300 ${isScrolled ? 'h-0 overflow-hidden mb-0 opacity-0' : 'h-auto opacity-100'}`}>
                         "All the news that's fit to bet on"
                     </div>
-                    <h1 className={`font-blackletter text-[var(--ink)] leading-tight tracking-tight mb-2 transition-all duration-300 ${isScrolled ? 'text-4xl md:text-5xl mb-0' : 'text-6xl md:text-8xl'}`}>
+                    <h1 className={`font-blackletter text-black leading-tight tracking-tight mb-2 transition-all duration-300 ${isScrolled ? 'text-4xl md:text-5xl mb-0' : 'text-6xl md:text-8xl'}`}>
                         The Polymarket Times
                     </h1>
                     <div className={`flex justify-center items-center gap-4 transition-all duration-300 ${isScrolled ? 'h-0 overflow-hidden opacity-0' : 'h-auto opacity-100'}`}>
-                        <div className="h-px w-12 bg-[var(--border)]"></div>
+                        <div className="h-px w-12 bg-black"></div>
                         <span className="text-xs font-bold font-display uppercase tracking-widest">
                             Late City Edition • {timestamp ? `Updated ${new Date(timestamp).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZoneName: 'short' })}` : 'Updated Hourly'}
                         </span>
-                        <div className="h-px w-12 bg-[var(--border)]"></div>
+                        <div className="h-px w-12 bg-black"></div>
                     </div>
                 </div>
 
                 {/* Right Ear */}
-                <div className={`hidden md:block w-48 border border-[var(--border)] p-2 transition-opacity duration-300 ${isScrolled ? 'opacity-0 w-0 p-0 border-0 overflow-hidden' : 'opacity-100'}`}>
-                    <h4 className="font-bold uppercase text-xs border-b border-[var(--border)] mb-2 pb-1 text-center">Live Crypto Prices</h4>
+                <div className={`hidden md:block w-48 border border-black p-2 transition-opacity duration-300 ${isScrolled ? 'opacity-0 w-0 p-0 border-0 overflow-hidden' : 'opacity-100'}`}>
+                    <h4 className="font-bold uppercase text-xs border-b border-black mb-2 pb-1 text-center">Live Crypto Prices</h4>
                     <div className="space-y-1 text-xs font-mono">
                         <div className="flex justify-between">
                             <span>BTC</span>

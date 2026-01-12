@@ -42,14 +42,14 @@ export default function BottomGrid({ stories }: BottomGridProps) {
     if (!stories || stories.length === 0) return null;
 
     return (
-        <section ref={sectionRef} className="border-b-4 border-double-thick border-[var(--border)] py-8 px-4 transition-colors duration-300">
+        <section ref={sectionRef} className="border-b-4 border-double-thick border-black py-8 px-4">
             {/* Ornamental Section Header */}
             <div className="flex items-center justify-center mb-6 gap-4">
-                <div className="h-px flex-1 bg-gradient-to-r from-transparent via-[var(--border)] to-[var(--border)]"></div>
+                <div className="h-px flex-1 bg-gradient-to-r from-transparent via-black to-black"></div>
                 <div className="text-3xl">❖</div>
-                <div className="h-px flex-1 bg-gradient-to-l from-transparent via-[var(--border)] to-[var(--border)]"></div>
+                <div className="h-px flex-1 bg-gradient-to-l from-transparent via-black to-black"></div>
             </div>
-            <div className="flex items-center justify-between border-b border-[var(--border)] mb-6 pb-2">
+            <div className="flex items-center justify-between border-b border-black mb-6 pb-2">
                 <h3 className="font-blackletter text-2xl">Elsewhere in the Markets</h3>
                 <span className="text-[10px] uppercase font-bold tracking-widest">Global Dispatch</span>
             </div>
@@ -77,11 +77,11 @@ export default function BottomGrid({ stories }: BottomGridProps) {
                         {story.image && (
                             <a href={story.link || "#"} target="_blank" rel="noopener noreferrer" className="block group relative">
                                 {statusBadge && (
-                                    <span className="absolute top-2 left-2 z-10 bg-black dark:bg-[#e8e4d9] text-white dark:text-black px-2 py-0.5 text-xs border border-white dark:border-[#2a2520] shadow-md">
+                                    <span className="absolute top-2 left-2 z-10 bg-black text-white px-2 py-0.5 text-xs border border-white shadow-md">
                                         {statusBadge}
                                     </span>
                                 )}
-                                <div className="aspect-[3/2] w-full mb-3 overflow-hidden border border-[var(--border)] p-0.5">
+                                <div className="aspect-[3/2] w-full mb-3 overflow-hidden border border-black p-0.5">
                                     <img
                                         src={story.image}
                                         alt={story.title}
@@ -91,7 +91,7 @@ export default function BottomGrid({ stories }: BottomGridProps) {
                             </a>
                         )}
                         <div className="flex justify-between items-start mb-2">
-                            <span className="text-[9px] font-bold uppercase tracking-wider border border-[var(--border)] px-1">{story.category}</span>
+                            <span className="text-[9px] font-bold uppercase tracking-wider border border-black px-1">{story.category}</span>
                             <span className="font-mono text-xs font-bold">{story.odds}</span>
                         </div>
                         <a href={story.link || "#"} target="_blank" rel="noopener noreferrer" className="hover:underline decoration-2 underline-offset-2">

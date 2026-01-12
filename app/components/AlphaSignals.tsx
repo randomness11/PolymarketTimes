@@ -33,7 +33,7 @@ export default function AlphaSignals({ contrarianTakes, headlines, stories }: Al
     const mediumCount = sortedTakes.filter(t => t.confidence === 'MEDIUM').length;
 
     return (
-        <section className="border-b-4 border-double-thick border-[var(--border)] py-8 px-4 bg-[var(--paper-secondary)] transition-colors duration-300">
+        <section className="border-b-4 border-double-thick border-black py-8 px-4 bg-[#e8e4d9]">
             {/* Section Header */}
             <div className="flex items-center justify-center mb-6 gap-4">
                 <div className="h-px flex-1 bg-gradient-to-r from-transparent via-red-900 to-red-900"></div>
@@ -81,7 +81,7 @@ export default function AlphaSignals({ contrarianTakes, headlines, stories }: Al
                     return (
                         <article
                             key={take.marketId}
-                            className="bg-[var(--background)] border-2 border-[var(--border)] p-4 relative card-lift-on-hover group transition-colors duration-300"
+                            className="bg-white border-2 border-black p-4 relative card-lift-on-hover group"
                         >
                             {/* Confidence Badge */}
                             <div className={`absolute -top-3 left-4 ${conf.bg} ${conf.text} px-3 py-1 text-[10px] font-bold uppercase tracking-wider`}>
@@ -90,7 +90,7 @@ export default function AlphaSignals({ contrarianTakes, headlines, stories }: Al
 
                             {/* Category & Odds */}
                             <div className="flex justify-between items-center mt-3 mb-3">
-                                <span className="text-[9px] font-bold uppercase tracking-wider border border-[var(--border)] px-1">
+                                <span className="text-[9px] font-bold uppercase tracking-wider border border-black px-1">
                                     {story.category}
                                 </span>
                                 <span className="font-mono text-sm font-bold">

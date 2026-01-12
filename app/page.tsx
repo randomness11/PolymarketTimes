@@ -9,7 +9,6 @@ import MarketTicker from './components/MarketTicker';
 import MainContentWrapper from './components/MainContentWrapper';
 import ReadableModeToggle from './components/ReadableModeToggle';
 import OnboardingFlow from './components/OnboardingFlow';
-import DarkModeToggle from './components/DarkModeToggle';
 import { getMarkets } from './api/markets/route';
 import { getEditorial } from './api/editorial/route';
 import { getCrypto } from './api/crypto/route';
@@ -269,13 +268,13 @@ export default async function Home() {
   })) || [];
 
   return (
-    <div className="min-h-screen p-2 md:p-8 max-w-[1600px] mx-auto bg-[var(--background)] overflow-x-hidden transition-colors duration-300">
+    <div className="min-h-screen p-2 md:p-8 max-w-[1600px] mx-auto bg-[#f4f1ea] overflow-x-hidden">
       <MarketTicker markets={tickerMarkets} />
       <Header cryptoPrices={cryptoData || undefined} timestamp={editorialData?.timestamp} />
 
       {/* Fallback mode notification */}
       {!editorialData && (
-        <div className="border-4 border-double border-[var(--border)] dark:border-[var(--border)] bg-[var(--paper-secondary)] p-4 mb-4 text-center animate-fade-in">
+        <div className="border-4 border-double border-black bg-[#e6e2d8] p-4 mb-4 text-center animate-fade-in">
           <h3 className="font-blackletter text-xl mb-1">Manual Edition in Progress</h3>
           <p className="font-serif text-xs italic">
             Our mechanical scribes are still preparing the full editorial. You are viewing market intelligence in its raw form.
@@ -323,9 +322,6 @@ export default async function Home() {
 
       {/* Readable Mode Toggle */}
       <ReadableModeToggle />
-
-      {/* Dark Mode Toggle */}
-      <DarkModeToggle />
 
       {/* Onboarding Flow for first-time visitors */}
       <OnboardingFlow />
