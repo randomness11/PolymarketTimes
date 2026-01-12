@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Polymarket Times</title>
+    <meta name="description" content="The decentralized newspaper of prediction markets">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=UnifrakturMaguntia&family=Playfair+Display:wght@400;700;900&family=EB+Garamond:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --background: #f4f1ea;
+            --foreground: #1a1a1a;
+            --border: #000000;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'EB Garamond', serif;
+            background-color: var(--background);
+            color: var(--foreground);
+            line-height: 1.75;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.08'/%3E%3C/svg%3E");
+        }
+
+        .font-blackletter {
+            font-family: 'UnifrakturMaguntia', serif;
+        }
+
+        .font-display {
+            font-family: 'Playfair Display', serif;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+
+        /* Header */
+        header {
+            border-bottom: 4px double var(--border);
+            padding: 1rem 0;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .meta-bar {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.7rem;
+            font-weight: bold;
+            letter-spacing: 0.1em;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .masthead {
+            padding: 2rem 0;
+        }
+
+        .masthead h1 {
+            font-size: clamp(2.5rem, 8vw, 5rem);
+            line-height: 1;
+            margin-bottom: 0.5rem;
+        }
+
+        .tagline {
+            font-size: 0.7rem;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: #666;
+        }
+
+        .edition-info {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 1rem;
+            font-size: 0.75rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        .edition-info .line {
+            height: 1px;
+            width: 3rem;
+            background: var(--border);
+        }
+
+        /* Loading State */
+        .loading {
+            text-align: center;
+            padding: 4rem 2rem;
+        }
+
+        .loading h2 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid #e0e0e0;
+            border-top-color: var(--border);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 1rem auto;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Stories Grid */
+        .stories-section {
+            border-bottom: 4px double var(--border);
+            padding: 2rem 0;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .section-header h2 {
+            font-size: 1.5rem;
+        }
+
+        .section-header .ornament {
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(to right, transparent, var(--border));
+        }
+
+        .stories-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+
+        /* Story Card */
+        .story-card {
+            border: 1px solid var(--border);
+            padding: 1rem;
+            background: white;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .story-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+        }
+
+        .story-card .category {
+            font-size: 0.6rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            border: 1px solid var(--border);
+            padding: 0.1rem 0.4rem;
+            display: inline-block;
+            margin-bottom: 0.5rem;
+        }
+
+        .story-card h3 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.1rem;
+            font-weight: 700;
+            line-height: 1.3;
+            margin-bottom: 0.5rem;
+        }
+
+        .story-card h3 a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        .story-card h3 a:hover {
+            text-decoration: underline;
+        }
+
+        .story-card .odds {
+            font-family: monospace;
+            font-size: 1.25rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+
+        .story-card .odds.bullish {
+            color: #166534;
+        }
+
+        .story-card .odds.bearish {
+            color: #991b1b;
+        }
+
+        .story-card .change {
+            font-size: 0.75rem;
+            padding: 0.2rem 0.5rem;
+            border-radius: 2px;
+            display: inline-block;
+        }
+
+        .story-card .change.up {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .story-card .change.down {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .story-card .volume {
+            font-size: 0.7rem;
+            color: #666;
+            margin-top: 0.5rem;
+        }
+
+        /* Lead Story */
+        .lead-story {
+            grid-column: 1 / -1;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            padding: 2rem;
+            border: 2px solid var(--border);
+        }
+
+        @media (max-width: 768px) {
+            .lead-story {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .lead-story h3 {
+            font-size: 2rem;
+            line-height: 1.2;
+        }
+
+        .lead-story .odds {
+            font-size: 2rem;
+        }
+
+        .lead-story .content {
+            font-size: 1rem;
+            line-height: 1.8;
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 2rem;
+            font-size: 0.75rem;
+            color: #666;
+        }
+
+        footer a {
+            color: inherit;
+        }
+
+        .decentralized-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: #1a1a1a;
+            color: #f4f1ea;
+            padding: 0.5rem 1rem;
+            font-size: 0.7rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-top: 1rem;
+        }
+
+        /* Error State */
+        .error {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: #991b1b;
+        }
+
+        .error h2 {
+            margin-bottom: 1rem;
+        }
+
+        .retry-btn {
+            background: var(--border);
+            color: var(--background);
+            border: none;
+            padding: 0.75rem 1.5rem;
+            font-family: inherit;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 1rem;
+        }
+
+        .retry-btn:hover {
+            background: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="meta-bar">
+                <span>VOL. CXXVII... No. 42,109</span>
+                <span id="current-date"></span>
+                <span>DECENTRALIZED EDITION</span>
+            </div>
+
+            <div class="masthead">
+                <div class="tagline">"All the news that's fit to bet on"</div>
+                <h1 class="font-blackletter">The Polymarket Times</h1>
+                <div class="edition-info">
+                    <div class="line"></div>
+                    <span>IPFS Edition &bull; <span id="timestamp">Loading...</span></span>
+                    <div class="line"></div>
+                </div>
+            </div>
+        </header>
+
+        <main id="main-content">
+            <div class="loading">
+                <h2 class="font-blackletter">Fetching Latest Markets...</h2>
+                <div class="spinner"></div>
+                <p>Connecting to Polymarket Times API</p>
+            </div>
+        </main>
+
+        <footer>
+            <p>Powered by <a href="https://polymarket.com" target="_blank">Polymarket</a> prediction markets</p>
+            <p>Main site: <a href="https://polymarketimes.com" target="_blank">polymarketimes.com</a></p>
+            <div class="decentralized-badge">
+                <span>&#x1F517;</span>
+                <span>Hosted on IPFS &bull; polymarkettimes.eth</span>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        const API_BASE = 'https://polymarketimes.com';
+
+        // Set current date
+        document.getElementById('current-date').textContent = new Date().toLocaleDateString('en-US', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        }).toUpperCase();
+
+        function formatVolume(vol) {
+            if (vol >= 1e9) return `$${(vol / 1e9).toFixed(1)}B`;
+            if (vol >= 1e6) return `$${(vol / 1e6).toFixed(1)}M`;
+            if (vol >= 1e3) return `$${(vol / 1e3).toFixed(0)}K`;
+            return `$${vol.toFixed(0)}`;
+        }
+
+        function renderStories(markets) {
+            const main = document.getElementById('main-content');
+
+            if (!markets || markets.length === 0) {
+                main.innerHTML = `
+                    <div class="error">
+                        <h2>No Markets Available</h2>
+                        <p>Unable to fetch market data at this time.</p>
+                        <button class="retry-btn" onclick="loadData()">Try Again</button>
+                    </div>
+                `;
+                return;
+            }
+
+            // Sort by volume
+            markets.sort((a, b) => (b.volume24hr || 0) - (a.volume24hr || 0));
+
+            const leadStory = markets[0];
+            const otherStories = markets.slice(1, 25);
+
+            const leadOdds = Math.round(leadStory.yesPrice * 100);
+            const leadChange = leadStory.priceChange24h || 0;
+
+            let html = `
+                <section class="stories-section">
+                    <div class="section-header">
+                        <div class="ornament"></div>
+                        <span style="font-size: 1.5rem;">&#x2756;</span>
+                        <div class="ornament" style="background: linear-gradient(to left, transparent, var(--border));"></div>
+                    </div>
+
+                    <div class="stories-grid">
+                        <article class="story-card lead-story">
+                            <div>
+                                <span class="category">${leadStory.category || 'MARKETS'}</span>
+                                <h3><a href="https://polymarket.com/event/${leadStory.slug}" target="_blank">${leadStory.question}</a></h3>
+                                <div class="odds ${leadOdds >= 50 ? 'bullish' : 'bearish'}">${leadOdds}% YES</div>
+                                <span class="change ${leadChange >= 0 ? 'up' : 'down'}">
+                                    ${leadChange >= 0 ? '↑' : '↓'} ${Math.abs(leadChange).toFixed(1)}pp 24h
+                                </span>
+                                <div class="volume">Volume: ${formatVolume(leadStory.volume24hr || 0)}</div>
+                            </div>
+                            <div class="content">
+                                <p>${leadStory.description || 'Track this prediction market on Polymarket.'}</p>
+                            </div>
+                        </article>
+            `;
+
+            for (const market of otherStories) {
+                const odds = Math.round(market.yesPrice * 100);
+                const change = market.priceChange24h || 0;
+
+                html += `
+                    <article class="story-card">
+                        <span class="category">${market.category || 'MARKETS'}</span>
+                        <h3><a href="https://polymarket.com/event/${market.slug}" target="_blank">${market.question}</a></h3>
+                        <div class="odds ${odds >= 50 ? 'bullish' : 'bearish'}">${odds}%</div>
+                        <span class="change ${change >= 0 ? 'up' : 'down'}">
+                            ${change >= 0 ? '↑' : '↓'} ${Math.abs(change).toFixed(1)}pp
+                        </span>
+                        <div class="volume">Vol: ${formatVolume(market.volume24hr || 0)}</div>
+                    </article>
+                `;
+            }
+
+            html += `
+                    </div>
+                </section>
+            `;
+
+            main.innerHTML = html;
+            document.getElementById('timestamp').textContent = 'Updated ' + new Date().toLocaleTimeString();
+        }
+
+        function showError(message) {
+            document.getElementById('main-content').innerHTML = `
+                <div class="error">
+                    <h2>Connection Error</h2>
+                    <p>${message}</p>
+                    <button class="retry-btn" onclick="loadData()">Try Again</button>
+                    <p style="margin-top: 1rem; font-size: 0.8rem;">
+                        Or visit <a href="https://polymarketimes.com">polymarketimes.com</a> directly
+                    </p>
+                </div>
+            `;
+        }
+
+        async function loadData() {
+            document.getElementById('main-content').innerHTML = `
+                <div class="loading">
+                    <h2 class="font-blackletter">Fetching Latest Markets...</h2>
+                    <div class="spinner"></div>
+                    <p>Connecting to Polymarket Times API</p>
+                </div>
+            `;
+
+            try {
+                const response = await fetch(`${API_BASE}/api/markets`, {
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const data = await response.json();
+                renderStories(data.markets || []);
+
+            } catch (error) {
+                console.error('Failed to load data:', error);
+                showError('Unable to connect to the API. The main site may be temporarily unavailable.');
+            }
+        }
+
+        // Load data on page load
+        loadData();
+
+        // Refresh every 5 minutes
+        setInterval(loadData, 5 * 60 * 1000);
+    </script>
+</body>
+</html>

@@ -358,15 +358,26 @@ export async function getMarkets(): Promise<MarketsResult> {
 
 export const revalidate = 3600;
 
+// CORS headers for decentralized frontend (IPFS)
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type',
+};
+
+export async function OPTIONS() {
+  return new NextResponse(null, { headers: corsHeaders });
+}
+
 export async function GET() {
   try {
     const data = await getMarkets();
-    return NextResponse.json(data);
+    return NextResponse.json(data, { headers: corsHeaders });
   } catch (error) {
     console.error('Error in markets API:', error);
     return NextResponse.json(
       { error: 'Failed to fetch market data' },
-      { status: 500 }
+      { status: 500, headers: corsHeaders }
     );
   }
 }
