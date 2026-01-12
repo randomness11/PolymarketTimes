@@ -12,14 +12,34 @@ export interface MarketMonitorOutput {
     reasoning: string;
 }
 
+export type AlertType = 'MAJOR_SWING' | 'BREAKING_NEWS' | 'VOLATILITY_SPIKE' | 'CONSENSUS_SHIFT';
+export type AlertUrgency = 'CRITICAL' | 'HIGH' | 'MEDIUM';
+
+const VALID_ALERT_TYPES: AlertType[] = ['MAJOR_SWING', 'BREAKING_NEWS', 'VOLATILITY_SPIKE', 'CONSENSUS_SHIFT'];
+const VALID_URGENCIES: AlertUrgency[] = ['CRITICAL', 'HIGH', 'MEDIUM'];
+
+function parseAlertType(val: unknown): AlertType {
+    if (typeof val === 'string' && VALID_ALERT_TYPES.includes(val as AlertType)) {
+        return val as AlertType;
+    }
+    return 'MAJOR_SWING';
+}
+
+function parseUrgency(val: unknown): AlertUrgency {
+    if (typeof val === 'string' && VALID_URGENCIES.includes(val as AlertUrgency)) {
+        return val as AlertUrgency;
+    }
+    return 'MEDIUM';
+}
+
 export interface MarketAlert {
     marketId: string;
     market: Market;
-    alertType: 'MAJOR_SWING' | 'BREAKING_NEWS' | 'VOLATILITY_SPIKE' | 'CONSENSUS_SHIFT';
+    alertType: AlertType;
     priceChange: number; // Absolute change in price (0-1)
     oldPrice: number;
     newPrice: number;
-    urgency: 'CRITICAL' | 'HIGH' | 'MEDIUM';
+    urgency: AlertUrgency;
     headline: string; // AI-generated breaking news headline
     reasoning: string;
 }
@@ -189,11 +209,11 @@ RESPOND WITH JSON ONLY:
                 finalAlerts.push({
                     marketId: candidate.market.id,
                     market: candidate.market,
-                    alertType: (alert.alertType as any) || 'MAJOR_SWING',
+                    alertType: parseAlertType(alert.alertType),
                     priceChange: candidate.change,
                     oldPrice: candidate.oldPrice,
                     newPrice: candidate.newPrice,
-                    urgency: (alert.urgency as any) || 'MEDIUM',
+                    urgency: parseUrgency(alert.urgency),
                     headline: alert.headline || 'BREAKING: MARKET MOVES',
                     reasoning: alert.reasoning
                 });

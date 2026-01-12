@@ -79,8 +79,11 @@ export default async function Home() {
       editorialData = editRes;
       if (process.env.NODE_ENV === 'development') console.log("Editorial generation complete!");
     }
-  } catch (e: any) {
-    if (process.env.NODE_ENV === 'development') console.warn("Editorial generation timed out or failed:", e.message);
+  } catch (e: unknown) {
+    if (process.env.NODE_ENV === 'development') {
+      const message = e instanceof Error ? e.message : String(e);
+      console.warn("Editorial generation timed out or failed:", message);
+    }
   }
 
   // Fallback content if editorial fails or times out

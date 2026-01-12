@@ -56,6 +56,9 @@ export function calculateTechEntityBoost(question: string, description: string):
     return hasEntity ? TECH_ENTITY_BOOST : 1.0;
 }
 
+// Maximum allowed boost to prevent score inflation
+const MAX_AUDIENCE_BOOST = 1.4;
+
 // Combined future + tech boost calculator
 export function calculateAudienceBoost(
     question: string,
@@ -74,7 +77,8 @@ export function calculateAudienceBoost(
     // Apply tech entity boost
     boost *= calculateTechEntityBoost(question, description);
 
-    return boost;
+    // Cap total boost to prevent extreme outliers
+    return Math.min(boost, MAX_AUDIENCE_BOOST);
 }
 
 // Short-term sports keywords (individual games to exclude)
@@ -183,11 +187,20 @@ export function calculateSpeed(priceChange24h: number | null): number {
 }
 
 export function normalizeVolume(volume24hr: number, maxVolume: number): number {
-    if (maxVolume === 0) return 0;
+    // Handle edge cases
+    if (maxVolume <= 0) return 0;
+    if (volume24hr <= 0) return 0;
+
+    // Minimum meaningful volume threshold
+    const MIN_VOLUME = 10;
+    if (maxVolume < MIN_VOLUME) return 0;
+
     // Log scale for wide range
-    const logVolume = Math.log10(volume24hr + 1);
-    const logMax = Math.log10(maxVolume + 1);
-    return logVolume / logMax;
+    const logVolume = Math.log10(Math.max(volume24hr, 1));
+    const logMax = Math.log10(maxVolume);
+
+    // Cap at 1.0 to prevent edge case overflow
+    return Math.min(logVolume / logMax, 1.0);
 }
 
 export function determineMarketStatus(

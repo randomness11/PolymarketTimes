@@ -29,6 +29,46 @@ interface PolymarketMarket {
   slug: string;
 }
 
+/**
+ * Retry fetch with exponential backoff
+ */
+async function fetchWithRetry(
+  url: string,
+  options: RequestInit,
+  maxRetries = 3,
+  baseDelayMs = 1000
+): Promise<Response> {
+  let lastError: Error | null = null;
+
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      const response = await fetch(url, options);
+
+      // Don't retry on 4xx client errors (permanent failures)
+      if (response.status >= 400 && response.status < 500) {
+        return response;
+      }
+
+      // Retry on 5xx server errors
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      return response;
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+      console.warn(`Fetch attempt ${attempt + 1}/${maxRetries} failed:`, lastError.message);
+
+      if (attempt < maxRetries - 1) {
+        const delay = baseDelayMs * Math.pow(2, attempt);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+  }
+
+  throw lastError || new Error('Fetch failed after retries');
+}
+
 // Result type for getMarkets
 export interface MarketsResult {
   markets: Market[];
@@ -90,15 +130,16 @@ export async function getMarkets(forceRefresh = false): Promise<MarketsResult> {
     console.log('DEV MODE: Skipping market cache, fetching fresh data');
   }
 
-  // 2. Fetch fresh data (No Next.js Cache)
-  // Fetch FEATURED events
-  const response = await fetch(
+  // 2. Fetch fresh data (No Next.js Cache) with retry logic
+  const response = await fetchWithRetry(
     'https://gamma-api.polymarket.com/events?limit=300&closed=false',
-    { cache: 'no-store' } // DONT use Next.js Data Cache (limit 2MB)
+    { cache: 'no-store' }, // DONT use Next.js Data Cache (limit 2MB)
+    3, // maxRetries
+    1000 // baseDelayMs
   );
 
   if (!response.ok) {
-    throw new Error('Failed to fetch markets from Polymarket');
+    throw new Error(`Failed to fetch markets from Polymarket: HTTP ${response.status}`);
   }
 
   const events: any[] = await response.json();
