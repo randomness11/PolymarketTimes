@@ -91,9 +91,11 @@ export default function Header({ cryptoPrices, timestamp }: HeaderProps) {
                                 </div>
                             </div>
 
-                            {/* Divider */}
-                            <div className="flex items-center justify-center gap-1 my-2">
-                                <div className="h-px w-8 bg-black group-hover:bg-[#f4f1ea] transition-all duration-300"></div>
+                            {/* Value Prop Highlight */}
+                            <div className="bg-black group-hover:bg-[#f4f1ea] mx-1 my-2 py-1 px-1 transition-all duration-300">
+                                <div className="text-[9px] font-bold text-center text-[#f4f1ea] group-hover:text-black tracking-wide transition-all duration-300">
+                                    Only Pay Fees If You Win
+                                </div>
                             </div>
 
                             {/* CTA Button */}
