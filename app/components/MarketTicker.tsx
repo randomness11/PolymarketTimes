@@ -12,7 +12,7 @@ export default function MarketTicker({ markets }: MarketTickerProps) {
     const tickerContent = [...markets, ...markets]; // x2 should be enough for basic width, maybe x4 for wide screens
 
     return (
-        <div className="w-full bg-black text-white overflow-hidden border-b-2 border-black py-1 font-mono text-xs uppercase tracking-widest z-50">
+        <div className="w-full bg-black dark:bg-[#2a2520] text-white dark:text-[#e8e4d9] overflow-hidden border-b-2 border-black dark:border-[#4a4540] py-1 font-mono text-xs uppercase tracking-widest z-50">
             <div className="animate-marquee whitespace-nowrap flex gap-8">
                 {tickerContent.map((market, index) => (
                     <a

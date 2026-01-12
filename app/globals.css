@@ -4,6 +4,12 @@
 :root {
   --foreground: #1a1a1a;
   --background: #f4f1ea;
+  --paper: #f4f1ea;
+  --paper-secondary: #e8e4d9;
+  --ink: #1a1a1a;
+  --ink-secondary: #4a4a4a;
+  --border: #000000;
+  --accent: #8b0000;
 
   /* Fluid Typography Scale */
   --text-xs: clamp(0.75rem, 0.7rem + 0.2vw, 0.875rem);
@@ -14,6 +20,18 @@
   --text-2xl: clamp(1.5rem, 1.3rem + 1vw, 2.25rem);
   --text-3xl: clamp(1.875rem, 1.5rem + 1.5vw, 3rem);
   --text-4xl: clamp(2.25rem, 1.8rem + 2vw, 3.75rem);
+}
+
+/* Dark Mode - Warm sepia dark theme for newspaper aesthetic */
+.dark {
+  --foreground: #e8e4d9;
+  --background: #1a1814;
+  --paper: #1a1814;
+  --paper-secondary: #2a2520;
+  --ink: #e8e4d9;
+  --ink-secondary: #b8b4a9;
+  --border: #4a4540;
+  --accent: #c4a574;
 }
 
 @layer base {
@@ -41,14 +59,20 @@
   }
 
   body {
-    background-color: #f4f1ea;
-    color: #1a1a1a;
+    background-color: var(--background);
+    color: var(--foreground);
     line-height: 1.75;
     /* Enhanced Vintage Paper Texture */
     background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.08'/%3E%3C/svg%3E");
     background-repeat: repeat;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+
+  /* Dark mode body adjustments */
+  .dark body {
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
   }
 
   h1,
@@ -478,4 +502,54 @@
     transform: none;
     filter: grayscale(100%) contrast(125%);
   }
+}
+
+/* Dark Mode Utilities */
+.dark .border-black {
+  border-color: var(--border);
+}
+
+.dark .bg-black {
+  background-color: var(--ink);
+}
+
+.dark .text-black {
+  color: var(--ink);
+}
+
+.dark .bg-white {
+  background-color: var(--paper-secondary);
+}
+
+.dark .text-white {
+  color: var(--paper);
+}
+
+/* Dark mode for specific color backgrounds */
+.dark .bg-\[\#f4f1ea\] {
+  background-color: var(--paper);
+}
+
+.dark .bg-\[\#e6e2d8\],
+.dark .bg-\[\#e8e4d9\] {
+  background-color: var(--paper-secondary);
+}
+
+/* Dark mode image adjustments */
+.dark img {
+  filter: brightness(0.9) contrast(1.1);
+}
+
+.dark .grayscale {
+  filter: grayscale(100%) contrast(125%) brightness(0.85);
+}
+
+/* Dark mode card shadows */
+.dark .card-lift-on-hover:hover {
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4);
+}
+
+/* Dark mode for ticker and headers */
+.dark .animate-marquee {
+  background-color: var(--paper-secondary);
 }

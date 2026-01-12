@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { UnifrakturMaguntia, Playfair_Display, EB_Garamond } from "next/font/google";
 import "./globals.css";
 import { ReadableModeProvider } from "./components/ReadableModeProvider";
+import { ThemeProvider } from "./context/ThemeContext";
 
 const unifraktur = UnifrakturMaguntia({
   weight: '400',
@@ -33,11 +34,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={`${unifraktur.variable} ${playfair.variable} ${garamond.variable} font-serif bg-[#f4f1ea] text-[#1a1a1a]`}>
-        <ReadableModeProvider>
-          {children}
-        </ReadableModeProvider>
+    <html lang="en" suppressHydrationWarning>
+      <body className={`${unifraktur.variable} ${playfair.variable} ${garamond.variable} font-serif`}>
+        <ThemeProvider>
+          <ReadableModeProvider>
+            {children}
+          </ReadableModeProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
