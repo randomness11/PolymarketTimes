@@ -19,14 +19,13 @@ export async function getEditorial(markets: Market[], groups: MarketGroup[] = []
   const supabase = getSupabase();
   const today = new Date();
 
-  // Cache Keys: 4-Hour Block (YYYY-MM-DDTHH) and Daily baseline
-  // Calculate 4-hour block timestamp for the cache key
+  // Cache Keys: 1-Hour Block (YYYY-MM-DDTHH) and Daily baseline
+  // Every hour gets a fresh edition for maximum freshness
   const currentHour = today.getHours();
-  const blockStartHour = Math.floor(currentHour / 4) * 4;
   const blockDate = new Date(today);
-  blockDate.setHours(blockStartHour, 0, 0, 0);
+  blockDate.setHours(currentHour, 0, 0, 0);
 
-  // Format: YYYY-MM-DDTHH (where HH is 00, 04, 08, 12, 16, 20)
+  // Format: YYYY-MM-DDTHH (e.g., 2025-01-14T08)
   const editionKey = blockDate.toISOString().slice(0, 13);
   const dailyKey = today.toISOString().slice(0, 10);  // e.g., "2025-12-22"
 

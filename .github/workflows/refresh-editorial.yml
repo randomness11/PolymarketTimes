@@ -2,8 +2,8 @@ name: Refresh Editorial
 
 on:
   schedule:
-    # Every 4 hours (6x/day instead of Vercel's 2x/day limit)
-    - cron: '0 */4 * * *'
+    # Every hour for maximum freshness
+    - cron: '0 * * * *'
   workflow_dispatch: # Allow manual triggers
 
 jobs:

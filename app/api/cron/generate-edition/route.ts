@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import { getEditorial } from '../../editorial/route';
 import { getMarkets } from '../../markets/route';
 import { getSupabase } from '../../lib/supabase';
@@ -57,11 +58,20 @@ export async function GET(request: Request) {
                 return NextResponse.json({ error: 'Failed to save baseline' }, { status: 500 });
             }
 
+            // Revalidate homepage
+            try {
+                revalidatePath('/');
+                console.log('[DAILY CRON] Revalidated homepage cache');
+            } catch (e) {
+                console.warn('[DAILY CRON] Revalidation warning:', e);
+            }
+
             console.log(`=== DAILY CRON: Saved baseline edition for ${dailyKey} ===`);
             return NextResponse.json({
                 success: true,
                 dateKey: dailyKey,
-                storiesCount: editorial.blueprint.stories.length
+                storiesCount: editorial.blueprint.stories.length,
+                revalidated: true
             });
         }
 

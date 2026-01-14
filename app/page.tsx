@@ -9,6 +9,7 @@ import MarketTicker from './components/MarketTicker';
 import MainContentWrapper from './components/MainContentWrapper';
 import ReadableModeToggle from './components/ReadableModeToggle';
 import OnboardingFlow from './components/OnboardingFlow';
+import { BreakingAlertsTicker, LastUpdatedIndicator, RefreshButton } from './components/LiveUpdates';
 import { getMarkets } from './api/markets/route';
 import { getEditorial } from './api/editorial/route';
 import { getCrypto } from './api/crypto/route';
@@ -292,8 +293,18 @@ export default async function Home() {
 
   return (
     <div className="min-h-screen p-2 md:p-8 max-w-[1600px] mx-auto bg-[#f4f1ea] overflow-x-hidden">
+        <BreakingAlertsTicker />
         <MarketTicker markets={tickerMarkets} />
       <Header cryptoPrices={cryptoData || undefined} timestamp={editorialData?.timestamp} />
+
+      {/* Live status bar */}
+      <div className="flex justify-between items-center py-2 px-4 border-b border-gray-300 mb-4">
+        <LastUpdatedIndicator timestamp={editorialData?.timestamp} />
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-gray-500 hidden sm:inline">50 stories • All categories</span>
+          <RefreshButton />
+        </div>
+      </div>
 
       {/* Fallback mode notification */}
       {!editorialData && (

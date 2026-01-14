@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import { getMarkets } from '../../markets/route';
 import { getEditorial } from '../../editorial/route';
 
@@ -38,8 +39,16 @@ export async function GET(request: Request) {
             return NextResponse.json({ success: false, error: editorialResult.error }, { status: 500 });
         }
 
+        // Revalidate the homepage to serve fresh content immediately
+        try {
+            revalidatePath('/');
+            console.log('[CRON] Revalidated homepage cache');
+        } catch (e) {
+            console.warn('[CRON] Revalidation warning:', e);
+        }
+
         console.log('[CRON] Successfully refreshed editorial.');
-        return NextResponse.json({ success: true, timestamp: new Date().toISOString() });
+        return NextResponse.json({ success: true, timestamp: new Date().toISOString(), revalidated: true });
 
     } catch (error) {
         console.error('[CRON] Critical error:', error);
