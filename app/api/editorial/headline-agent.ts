@@ -16,39 +16,137 @@ export interface HeadlineWriterOutput {
 }
 
 /**
- * Generates improved fallback headline when AI fails
- * Converts questions to declarative statements based on market odds
+ * Pick random item from array using market ID as seed for consistency
+ */
+function pickRandom<T>(arr: T[], seed: string): T {
+    const hash = seed.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    return arr[hash % arr.length];
+}
+
+/**
+ * Generates punchy fallback headline when AI fails
+ * Uses news-style declarative statements based on market odds
  */
 function generateFallbackHeadline(market: Market | null): string {
     if (!market) return 'BREAKING DEVELOPMENTS';
 
-    let question = market.question.replace(/\?$/, '').trim();
+    const odds = Math.round(Math.max(market.yesPrice, market.noPrice) * 100);
+    const isYes = market.yesPrice > 0.5;
 
-    // Remove common question prefixes
-    question = question
+    // Extract key subject from question
+    let subject = market.question
+        .replace(/\?$/, '')
         .replace(/^Will\s+/i, '')
         .replace(/^Is\s+/i, '')
         .replace(/^Does\s+/i, '')
         .replace(/^Can\s+/i, '')
         .replace(/^Should\s+/i, '')
+        .replace(/\s+by\s+.*$/i, '') // Remove "by December 31"
+        .replace(/\s+in\s+\d{4}.*$/i, '') // Remove "in 2025"
+        .replace(/\s+before\s+.*$/i, '') // Remove "before March"
         .trim();
 
-    // If odds are high (>70%), make it sound more certain
-    const odds = Math.max(market.yesPrice, market.noPrice);
-    const isYes = market.yesPrice > 0.5;
+    // Truncate if too long
+    if (subject.length > 40) {
+        subject = subject.substring(0, 37) + '...';
+    }
 
-    // Try to create a more declarative headline
-    if (odds > 0.7) {
-        // High certainty - state as likely fact
-        if (isYes) {
-            return question.toUpperCase();
-        } else {
-            // Add "NOT" or similar negation
-            return `${question.toUpperCase()} UNLIKELY`;
-        }
+    const S = subject.toUpperCase();
+
+    // Generate headline based on odds and direction
+    if (odds >= 85) {
+        // Near certain
+        const yesOptions = [
+            `${S} LOCKED IN`,
+            `${S} ALL BUT CERTAIN`,
+            `${S} SECURES VICTORY`,
+            `${S}: DONE DEAL`,
+            `${S} CLINCHES IT`,
+            `${S} SEALS THE DEAL`,
+        ];
+        const noOptions = [
+            `${S} ALL BUT DEAD`,
+            `${S} FLATLINES`,
+            `${S} COLLAPSES`,
+            `${S}: GAME OVER`,
+            `${S} FALLS APART`,
+            `${S} CRUMBLES`,
+        ];
+        return pickRandom(isYes ? yesOptions : noOptions, market.id);
+    } else if (odds >= 70) {
+        // Favored
+        const yesOptions = [
+            `${S} ON TRACK`,
+            `${S} PULLS AHEAD`,
+            `${S} BUILDS LEAD`,
+            `${S} GAINS GROUND`,
+            `${S} EYES FINISH LINE`,
+            `${S} TAKES COMMAND`,
+            `${S} SEIZES MOMENTUM`,
+        ];
+        const noOptions = [
+            `${S} FADING FAST`,
+            `${S} LOSES STEAM`,
+            `${S} IN TROUBLE`,
+            `${S} SLIPS AWAY`,
+            `${S} FACES HEADWINDS`,
+            `${S} STUMBLES`,
+        ];
+        return pickRandom(isYes ? yesOptions : noOptions, market.id);
+    } else if (odds >= 55) {
+        // Slight edge
+        const yesOptions = [
+            `${S} EDGES AHEAD`,
+            `${S} TAKES SLIM LEAD`,
+            `${S} INCHES FORWARD`,
+            `${S} HOLDS NARROW EDGE`,
+            `${S} NUDGES AHEAD`,
+            `${S}: ADVANTAGE FORMS`,
+        ];
+        const noOptions = [
+            `${S} LOSING GROUND`,
+            `${S} SLIPS BACK`,
+            `${S} TRAILS NARROWLY`,
+            `${S} FALLS BEHIND`,
+            `${S}: LEAD NARROWS`,
+            `${S} UNDER PRESSURE`,
+        ];
+        return pickRandom(isYes ? yesOptions : noOptions, market.id);
+    } else if (odds >= 45) {
+        // Toss-up - this is the interesting zone
+        const options = [
+            `${S}: HANGS IN BALANCE`,
+            `${S}: TOO CLOSE TO CALL`,
+            `${S}: DEAD HEAT`,
+            `${S}: BATTLE RAGES`,
+            `${S}: NECK AND NECK`,
+            `${S}: COIN FLIP`,
+            `${S}: ANYONE'S GAME`,
+            `${S}: RACE TIGHTENS`,
+            `${S}: SHOWDOWN LOOMS`,
+            `${S}: TENSION MOUNTS`,
+        ];
+        return pickRandom(options, market.id);
     } else {
-        // Contested - use more dramatic framing
-        return `${question.toUpperCase()} IN QUESTION`;
+        // Underdog
+        const yesOptions = [
+            `${S} SURGES`,
+            `${S} MOUNTS COMEBACK`,
+            `${S} DEFIES ODDS`,
+            `${S} FIGHTS BACK`,
+            `${S}: UPSET BREWING?`,
+            `${S} REFUSES TO DIE`,
+            `${S} RALLIES`,
+        ];
+        const noOptions = [
+            `${S} FACES LONG ODDS`,
+            `${S}: UPHILL BATTLE`,
+            `${S} CLINGS TO HOPE`,
+            `${S}: SLIM CHANCE`,
+            `${S} FIGHTS GRAVITY`,
+            `${S}: MIRACLE NEEDED`,
+        ];
+        return pickRandom(isYes ? yesOptions : noOptions, market.id);
     }
 }
 
@@ -63,8 +161,8 @@ export class HeadlineWriterAgent implements Agent<HeadlineWriterInput, HeadlineW
         const stories = blueprint.stories;
         const client = createAIClient(this.apiKey);
 
-        // Process in larger batches with Gemini Flash's 1M token context
-        const BATCH_SIZE = 8; // Reduced from 15 to prevent truncation
+        // Process in larger batches - optimized for 50 stories
+        const BATCH_SIZE = 10; // 5 batches for 50 stories
         const batches: Market[][] = [];
         for (let i = 0; i < stories.length; i += BATCH_SIZE) {
             batches.push(stories.slice(i, i + BATCH_SIZE));
@@ -75,8 +173,8 @@ export class HeadlineWriterAgent implements Agent<HeadlineWriterInput, HeadlineW
         const finalHeadlines: Headlines = {};
 
         await Promise.all(batches.map(async (batch, batchIdx) => {
-            // Stagger batch starts to avoid rate limits (reduced for faster execution)
-            await new Promise(resolve => setTimeout(resolve, batchIdx * 75));
+            // Stagger batch starts to avoid rate limits
+            await new Promise(resolve => setTimeout(resolve, batchIdx * 200));
 
             const batchStories = batch.map((m, i) => {
                 const yesWinning = m.yesPrice > 0.5;

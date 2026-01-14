@@ -1,5 +1,6 @@
 import { Market, MarketCategory, FrontPageBlueprint, Story, StoryLayout, TimeHorizon } from '../../types';
 import { Agent, createAIClient, extractJSON, withRetry, GEMINI_MODELS } from '../lib/agents';
+import { clusterIntoTopics, selectBalancedTopics, Topic } from '../lib/topic-clustering';
 
 export interface EditorialDirectorInput {
     markets: Market[];
@@ -12,149 +13,47 @@ export interface EditorialDirectorOutput {
 }
 
 /**
- * Format market data for AI evaluation
+ * Format topic for AI evaluation
  */
-function formatMarketForAI(market: Market, index: number, recentlyCovered: string[]): string {
-    const yesWinning = market.yesPrice > 0.5;
-    const leadingOdds = Math.round(Math.max(market.yesPrice, market.noPrice) * 100);
-    const vol = market.volume24hr >= 1e6
-        ? `$${(market.volume24hr / 1e6).toFixed(1)}M`
-        : market.volume24hr >= 1e3
-            ? `$${(market.volume24hr / 1e3).toFixed(0)}K`
-            : `$${market.volume24hr.toFixed(0)}`;
+function formatTopicForAI(topic: Topic, index: number, recentlyCovered: string[]): string {
+    const m = topic.primaryMarket;
+    const yesWinning = m.yesPrice > 0.5;
+    const leadingOdds = Math.round(Math.max(m.yesPrice, m.noPrice) * 100);
 
-    const priceChange = market.priceChange24h
-        ? `${market.priceChange24h > 0 ? '+' : ''}${market.priceChange24h.toFixed(1)}pp`
-        : '0pp';
+    const vol = topic.totalVolume24hr >= 1e6
+        ? `$${(topic.totalVolume24hr / 1e6).toFixed(1)}M`
+        : topic.totalVolume24hr >= 1e3
+            ? `$${(topic.totalVolume24hr / 1e3).toFixed(0)}K`
+            : `$${topic.totalVolume24hr.toFixed(0)}`;
 
-    const endDate = market.endDate ? new Date(market.endDate) : null;
+    const priceChange = topic.biggestPriceMove
+        ? `${topic.biggestPriceMove > 0 ? '+' : ''}${topic.biggestPriceMove.toFixed(1)}pp`
+        : 'stable';
+
+    const endDate = m.endDate ? new Date(m.endDate) : null;
     const daysToResolution = endDate
         ? Math.ceil((endDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
         : null;
 
-    // Time horizon label for future-focused selection
-    const horizonLabel = market.timeHorizon || (daysToResolution
-        ? (daysToResolution < 7 ? 'IMMINENT' : daysToResolution < 30 ? 'NEAR_TERM' : daysToResolution < 180 ? 'MEDIUM_TERM' : 'LONG_TERM')
-        : 'LONG_TERM');
+    const recentFlag = recentlyCovered.includes(m.id) ? ' ⚠️ RECENT' : '';
+    const clusterFlag = topic.marketCount > 1 ? ` [${topic.marketCount} related markets]` : '';
 
-    const futureTag = horizonLabel === 'MEDIUM_TERM' || horizonLabel === 'LONG_TERM' ? ' 🔮 FUTURE' : '';
-
-    const recentFlag = recentlyCovered.includes(market.id) ? ' ⚠️ RECENTLY_COVERED' : '';
-
-    return `[${index}] [${market.category}] [${horizonLabel}]${futureTag} "${market.question}"${recentFlag}
-├─ Odds: ${leadingOdds}% ${yesWinning ? 'YES' : 'NO'} | Vol: ${vol} | 24h: ${priceChange}
+    return `[${index}] [${topic.category}] "${topic.name}"${recentFlag}${clusterFlag}
+├─ Primary: "${m.question}"
+├─ Odds: ${leadingOdds}% ${yesWinning ? 'YES' : 'NO'} | Vol: ${vol} | Move: ${priceChange}
 └─ Resolution: ${daysToResolution ? `${daysToResolution} days` : 'Open-ended'}`;
 }
 
 /**
- * Check if a market is actually sports (regardless of category)
- * This catches miscategorized sports markets
- */
-function isActuallySports(question: string): boolean {
-    const q = question.toLowerCase();
-    const sportsKeywords = [
-        'la liga', 'bundesliga', 'serie a', 'ligue 1', 'premier league', 'champions league',
-        'europa league', 'world cup', 'euro 2', 'copa america',
-        'nfl', 'nba', 'mlb', 'nhl', 'mls',
-        'super bowl', 'world series', 'stanley cup', 'finals',
-        'quarterback', 'touchdown', 'playoffs', 'mvp award',
-        'golf', 'masters tournament', 'pga', 'wimbledon', 'us open tennis',
-        'f1', 'formula 1', 'grand prix', 'ufc', 'boxing',
-        'win the 202', 'win the 203', // "Will X win the 2025-26 Season"
-        'relegat', // relegation
-    ];
-    return sportsKeywords.some(kw => q.includes(kw));
-}
-
-/**
- * Pre-filter to get diverse candidates before AI selection
- * This reduces cognitive load on the LLM while ensuring diversity
- */
-function getStratifiedCandidates(markets: Market[]): Market[] {
-    // Filter out dead markets AND miscategorized sports
-    const activeMarkets = markets.filter(m =>
-        m.marketStatus !== 'dead_on_arrival' &&
-        !(m.category !== 'SPORTS' && isActuallySports(m.question)) // Remove miscategorized sports
-    );
-
-    const getTop = (cat: MarketCategory, count: number) =>
-        activeMarkets
-            .filter(m => m.category === cat)
-            .sort((a, b) => b.scores.total - a.scores.total)
-            .slice(0, count);
-
-    // Get high velocity movers (biggest price changes)
-    const getMovers = (count: number) =>
-        activeMarkets
-            .sort((a, b) => Math.abs(b.priceChange24h || 0) - Math.abs(a.priceChange24h || 0))
-            .slice(0, count);
-
-    // Diverse sports: max 1 per league
-    const getDiverseSports = (): Market[] => {
-        const sportsMarkets = activeMarkets
-            .filter(m => m.category === 'SPORTS')
-            .sort((a, b) => b.scores.total - a.scores.total);
-
-        const leagues = ['nfl', 'nba', 'mlb', 'nhl', 'soccer', 'f1', 'ufc', 'tennis', 'golf', 'premier league', 'champions league'];
-        const picked: Market[] = [];
-        const usedLeagues = new Set<string>();
-
-        for (const market of sportsMarkets) {
-            const q = market.question.toLowerCase();
-            const league = leagues.find(l => q.includes(l)) || 'other';
-            if (!usedLeagues.has(league)) {
-                usedLeagues.add(league);
-                picked.push(market);
-            }
-            if (picked.length >= 2) break;
-        }
-        return picked;
-    };
-
-    // Stratified selection by category — TECH TWITTER FIRST
-    // Prioritize tech, crypto, and future-focused markets
-    const candidates = [
-        ...getTop('TECH', 20),         // Tech/AI is THE core — most slots
-        ...getTop('CRYPTO', 12),       // Crypto is Polymarket native
-        ...getTop('BUSINESS', 8),      // Startups, funding, M&A
-        ...getTop('SCIENCE', 6),       // Space, biotech, breakthroughs
-        ...getTop('POLITICS', 6),      // Only tech-relevant policy
-        ...getTop('FINANCE', 4),       // Fed, rates when market-moving
-        ...getTop('CONFLICT', 3),      // Only if affecting markets
-        ...getTop('OTHER', 3),
-        // BIG MOVERS - prioritize tech/crypto movers
-        ...getMovers(25).filter(m => m.category !== 'SPORTS' && m.category !== 'CULTURE'),
-        // MINIMAL entertainment - NO SPORTS, only 1 culture if really good
-        ...getTop('CULTURE', 1),
-        // REMOVED: ...getDiverseSports() - NO SPORTS AT ALL
-    ];
-
-    // Deduplicate while preserving order
-    // Also filter out any remaining sports that slipped through
-    const seen = new Set<string>();
-    const unique: Market[] = [];
-
-    for (const m of candidates) {
-        if (!seen.has(m.id)) {
-            // HARD BLOCK: No sports whatsoever
-            if (m.category === 'SPORTS' || isActuallySports(m.question)) {
-                continue;
-            }
-            seen.add(m.id);
-            unique.push(m);
-        }
-    }
-
-    return unique.sort((a, b) => b.scores.total - a.scores.total);
-}
-
-/**
- * Editorial Director Agent - Unified story selection and layout assignment
+ * Editorial Director Agent
  *
- * REPLACES: NewsDirectorAgent + CuratorAgent
+ * Selects 50 stories for the front page using proper journalistic criteria.
+ * No category bias - stories compete on pure newsworthiness.
  *
- * Single-pass editorial judgment: selects newsworthy stories AND assigns layouts.
- * Eliminates redundant filtering and reduces total API calls.
+ * Layout:
+ * - 1 LEAD_STORY: The most important story of the day
+ * - 8 FEATURE: Major stories deserving full coverage
+ * - 41 BRIEF: Newsworthy stories, headline only
  */
 export class EditorialDirectorAgent implements Agent<EditorialDirectorInput, EditorialDirectorOutput> {
     constructor(private apiKey: string) { }
@@ -166,123 +65,135 @@ export class EditorialDirectorAgent implements Agent<EditorialDirectorInput, Edi
             throw new Error('No markets available for editorial review');
         }
 
-        console.log(`Editorial Director: Evaluating ${markets.length} markets...`);
+        console.log(`Editorial Director: Processing ${markets.length} markets...`);
 
-        // 1. Stratified pre-selection (algorithmic diversity)
-        const candidates = getStratifiedCandidates(markets);
-        console.log(`Editorial Director: Pre-selected ${candidates.length} diverse candidates`);
+        // Step 1: Cluster markets into topics
+        const allTopics = clusterIntoTopics(markets);
+        console.log(`Editorial Director: Clustered into ${allTopics.length} topics`);
 
-        // 2. AI editorial selection with layout assignment
+        // Step 2: Select balanced topics (50 slots, respecting category limits)
+        const candidateTopics = selectBalancedTopics(allTopics, 80); // Get more candidates for AI to choose from
+        console.log(`Editorial Director: Selected ${candidateTopics.length} candidate topics for AI review`);
+
+        // Step 3: AI editorial selection
         const client = createAIClient(this.apiKey);
 
-        const marketsList = candidates
-            .map((m, i) => formatMarketForAI(m, i, recentlyCovered))
+        const topicsList = candidateTopics
+            .map((t, i) => formatTopicForAI(t, i, recentlyCovered))
             .join('\n\n');
 
-        const prompt = `You are the Editorial Director of "The Polymarket Times" — the front page for tech Twitter and the Polymarket community.
+        const prompt = `You are the Editor-in-Chief of "The Polymarket Times" — a serious newspaper that covers prediction markets.
 
-Your audience: Builders, founders, traders, and tech-obsessed readers who want to know what's COMING, not just what's happening.
+Your job: Select the 50 most newsworthy stories for today's front page.
 
-Your job: Select the day's front page AND assign each story's prominence.
+You are NOT biased toward any category. A war update, a tech product launch, a sports championship, and a crypto price movement all deserve equal consideration. What matters is NEWSWORTHINESS.
 
 TODAY'S DATE: ${new Date().toISOString().split('T')[0]}
 
 ═══════════════════════════════════════════════════════════
-CANDIDATES (${candidates.length} markets):
+CANDIDATE TOPICS (${candidateTopics.length} topics):
 ═══════════════════════════════════════════════════════════
-${marketsList}
-
-═══════════════════════════════════════════════════════════
-SELECTION CRITERIA (stories must meet 2+ to qualify):
-═══════════════════════════════════════════════════════════
-
-1. 🔮 FUTURE-DEFINING — Markets about what's COMING (3-12 months out). AI milestones, product launches, funding rounds. Tech Twitter wants to know the future.
-2. 🔥 BREAKING — Large swings (>10pp in 24h), evolving situations
-3. 🤖 TECH/AI — OpenAI, Anthropic, Google AI, Apple, Tesla, SpaceX, semiconductors. These get priority.
-4. 💰 CRYPTO MOVES — BTC, ETH, SOL, major DeFi, protocol upgrades, regulatory clarity
-5. ⚖️ CONTESTED — Close odds (40-60%) + high volume = drama and alpha
-6. 🚀 FOUNDER/VC — Markets about Elon, Altman, a16z, YC companies, major raises
-7. ✨ NOVELTY — Fresh angle, not recently covered
-8. 🎲 CONTRARIAN SIGNAL — Odds moving against volume (smart money divergence)
+${topicsList}
 
 ═══════════════════════════════════════════════════════════
-WHAT TO AVOID — BE RUTHLESS:
+WHAT MAKES SOMETHING NEWSWORTHY (IN ORDER OF IMPORTANCE):
 ═══════════════════════════════════════════════════════════
-❌ ENTERTAINMENT BETTING: Oscar predictions, Grammy picks, award show outcomes
-   → These are GAMBLING, not ALPHA.
 
-❌ SPORTS GAMES: Individual matchups, weekly games
-   → Unless it's a major championship with cultural crossover
+1. **HUMAN STAKES** — Does this affect lives, not just money?
+   ⚠️ WAR, CONFLICT, GEOPOLITICS always outrank financial stories
+   - "US strikes Iran" > "Bitcoin hits $100k" — ALWAYS
+   - Elections affecting millions > corporate earnings
+   - Health/safety crises > market movements
 
-❌ NEAR-TERM ONLY MARKETS: Prefer markets 30+ days out
-   → Exception: Breaking news with >10pp swings
+2. MAGNITUDE — How many people are affected?
+   - Global conflict > regional news > local news
+   - National elections > company news > price targets
 
-❌ NO-CATALYST NOISE: Markets with no movement AND no clear resolution path
+3. CONSEQUENCE — What happens next because of this?
+   - "Fed cuts rates" has cascading effects
+   - War has generational consequences
 
-❌ Markets marked ⚠️ RECENTLY_COVERED (unless major update)
+4. URGENCY — Is this happening NOW?
+   - Imminent military action > price speculation
+   - Big price moves (>5pp) indicate breaking news
 
-THE FRONT PAGE TEST: Would tech Twitter care about this?
-- "Will GPT-5 ship by Q3?" YES — future-defining
-- "OpenAI $300B valuation?" YES — founder/VC signal
-- "BTC ETF approval?" YES — crypto native
-- "Will Lakers beat Celtics tonight?" NO — wrong audience
+5. VOLUME — How much money is at stake in the market?
+   - $1M+ volume = serious conviction
+   - But volume alone doesn't make something important
 
-═══════════════════════════════════════════════════════════
-LAYOUT ASSIGNMENTS (BE PRECISE):
-═══════════════════════════════════════════════════════════
-• LEAD_STORY (exactly 1): THE main story. Gets the giant banner headline and full article. Pick the most consequential, highest-stakes story.
-
-• FEATURE (exactly 5): Sidebar stories. These appear prominently on the right side. Each gets a headline and short article. Pick stories that are:
-  - High stakes but not THE biggest
-  - Good mix of categories (don't put 5 politics stories)
-  - Interesting enough to warrant analysis
-
-• BRIEF (15-25): Bottom grid. Only get headlines, no articles. These are the "also newsworthy" stories - important to track but don't need deep coverage.
-
-TOTAL: You must select 21-31 stories (1 LEAD + 5 FEATURE + 15-25 BRIEF)
+6. CONTESTEDNESS — Is it genuinely uncertain?
+   - 45-55% odds = genuine uncertainty
+   - But a 60% chance of WAR is more newsworthy than 50% odds on a price target
 
 ═══════════════════════════════════════════════════════════
-DIVERSITY REQUIREMENTS — TECH TWITTER FIRST:
+LEAD STORY PRIORITY (STRICT HIERARCHY):
 ═══════════════════════════════════════════════════════════
-Your front page MUST prioritize:
-- 8-10 TECH (AI labs, products, breakthroughs, major companies) — THIS IS THE CORE
-- 4-6 CRYPTO (BTC, ETH, DeFi, protocol news, regulatory) — POLYMARKET NATIVE
-- 3-4 BUSINESS (startups, IPOs, M&A, funding rounds, founder moves)
-- 2-3 SCIENCE (space, biotech, breakthroughs)
-- 2-3 POLITICS (only if tech/crypto relevant: regulation, antitrust, trade)
-- 1-2 FINANCE (Fed, rates — but only when market-moving)
-- MAX 1 CONFLICT — unless directly affecting tech/markets
-- MAX 1 CULTURE/SPORTS — only if genuinely viral on tech Twitter
+For the LEAD story, apply this hierarchy:
 
-FUTURE FOCUS: At least 30% of stories should resolve 30+ days from now.
+1. **ACTIVE CONFLICT/WAR** — If there's military action, strikes, or imminent conflict, this is the lead. Period.
+2. **MAJOR ELECTIONS** — Presidential elections, regime change
+3. **GLOBAL ECONOMIC CRISIS** — Fed decisions, market crashes with systemic risk
+4. **MAJOR GEOPOLITICAL SHIFTS** — Treaties, sanctions, regime collapse
+5. **Everything else** — Tech, crypto, business, sports
+
+A Bitcoin price target should NEVER be the lead if there's an active military conflict story available.
+
+═══════════════════════════════════════════════════════════
+LAYOUT ASSIGNMENTS:
+═══════════════════════════════════════════════════════════
+
+• LEAD_STORY (exactly 1):
+  THE story of the day. Highest stakes, most consequential.
+  Gets the giant banner headline and full article.
+
+• FEATURE (exactly 8):
+  Major stories deserving prominence. Each gets a headline and article.
+  Should be diverse - don't cluster all 8 in one category.
+
+• BRIEF (exactly 41):
+  Newsworthy stories that readers should know about.
+  Headline only, no article.
+
+TOTAL: Exactly 50 stories (1 + 8 + 41)
+
+═══════════════════════════════════════════════════════════
+DIVERSITY REQUIREMENT:
+═══════════════════════════════════════════════════════════
+
+Your front page should reflect what's ACTUALLY happening in the world.
+Don't artificially favor any category. But also ensure variety:
+
+- No more than 10 stories from any single category
+- The LEAD and FEATURE stories should span at least 4 different categories
+- If one topic dominates the news (e.g., major election), that's fine — but justify it
 
 ═══════════════════════════════════════════════════════════
 RESPOND WITH JSON ONLY:
 ═══════════════════════════════════════════════════════════
 {
   "selections": [
-    { "index": 0, "layout": "LEAD_STORY", "why": "15pp swing on Ukraine ceasefire - highest stakes" },
-    { "index": 3, "layout": "FEATURE", "why": "Fed decision imminent, contested odds" },
-    { "index": 5, "layout": "FEATURE", "why": "OpenAI valuation - founder/VC signal" },
-    { "index": 8, "layout": "FEATURE", "why": "BTC at key level, high volume" },
-    { "index": 12, "layout": "FEATURE", "why": "SpaceX Starship launch window" },
-    { "index": 15, "layout": "FEATURE", "why": "Anthropic funding round - AI competition" },
-    { "index": 7, "layout": "BRIEF", "why": "ETH staking yield" },
-    { "index": 9, "layout": "BRIEF", "why": "Tesla delivery numbers" },
-    ...more BRIEF entries...
+    { "index": 0, "layout": "LEAD_STORY", "why": "Major geopolitical shift, $2B in volume, 15pp swing" },
+    { "index": 3, "layout": "FEATURE", "why": "Fed decision affects global markets" },
+    { "index": 7, "layout": "FEATURE", "why": "AI milestone with industry implications" },
+    { "index": 12, "layout": "BRIEF", "why": "Notable crypto movement" },
+    ...continue for all 50 selections...
   ],
-  "reasoning": "Selected 25 stories: 1 LEAD (Ukraine), 5 FEATURE (Fed, OpenAI, BTC, SpaceX, Anthropic), 19 BRIEF..."
-}
-
-CRITICAL: You MUST have exactly 1 LEAD_STORY and exactly 5 FEATURE. The rest should be BRIEF.`;
+  "category_breakdown": {
+    "POLITICS": 8,
+    "TECH": 7,
+    "CRYPTO": 6,
+    ...etc...
+  },
+  "reasoning": "Today's front page leads with [X] because... The 8 features cover [categories] reflecting..."
+}`;
 
         try {
             const response = await withRetry(async () => {
                 return client.chat.completions.create({
                     model: GEMINI_MODELS.SMART,
                     messages: [{ role: 'user', content: prompt }],
-                    temperature: 0.4, // Conservative editorial judgment
-                    max_tokens: 3000,
+                    temperature: 0.3, // Lower temperature for consistent editorial judgment
+                    max_tokens: 6000, // More tokens for 50 selections
                 });
             }, 2, 500);
 
@@ -296,9 +207,9 @@ CRITICAL: You MUST have exactly 1 LEAD_STORY and exactly 5 FEATURE. The rest sho
             const selections = parsed.selections || [];
             const selectedStories: Story[] = selections
                 .map(sel => {
-                    const market = candidates[sel.index];
-                    if (!market) return null;
-                    return { ...market, layout: sel.layout || 'BRIEF' } as Story;
+                    const topic = candidateTopics[sel.index];
+                    if (!topic) return null;
+                    return { ...topic.primaryMarket, layout: sel.layout || 'BRIEF' } as Story;
                 })
                 .filter((s): s is Story => s !== null);
 
@@ -310,96 +221,110 @@ CRITICAL: You MUST have exactly 1 LEAD_STORY and exactly 5 FEATURE. The rest sho
                 return true;
             });
 
-            // Ensure we have enough stories (fallback fill)
-            if (uniqueStories.length < 20) {
-                const remaining = candidates
-                    .filter(m => !seenIds.has(m.id))
-                    .slice(0, 35 - uniqueStories.length)
-                    .map(m => ({ ...m, layout: 'BRIEF' as StoryLayout }));
+            // Ensure we have 50 stories
+            if (uniqueStories.length < 50) {
+                const remaining = candidateTopics
+                    .filter(t => !seenIds.has(t.primaryMarket.id))
+                    .slice(0, 50 - uniqueStories.length)
+                    .map(t => ({ ...t.primaryMarket, layout: 'BRIEF' as StoryLayout }));
                 uniqueStories.push(...remaining);
             }
 
-            // Ensure exactly 1 LEAD_STORY
-            const leadStories = uniqueStories.filter(s => s.layout === 'LEAD_STORY');
-            if (leadStories.length === 0 && uniqueStories.length > 0) {
-                uniqueStories[0].layout = 'LEAD_STORY';
-            } else if (leadStories.length > 1) {
-                // Demote extra leads to FEATURE
-                leadStories.slice(1).forEach(s => { s.layout = 'FEATURE'; });
-            }
+            // Enforce layout constraints
+            this.enforceLayoutConstraints(uniqueStories);
 
-            // Ensure exactly 5 FEATURE stories for sidebar
-            const featureStories = uniqueStories.filter(s => s.layout === 'FEATURE');
-            if (featureStories.length < 5) {
-                // Promote top BRIEF stories to FEATURE
-                const briefStories = uniqueStories.filter(s => s.layout === 'BRIEF');
-                const needed = 5 - featureStories.length;
-                briefStories.slice(0, needed).forEach(s => { s.layout = 'FEATURE'; });
-            } else if (featureStories.length > 5) {
-                // Demote extra features to BRIEF
-                featureStories.slice(5).forEach(s => { s.layout = 'BRIEF'; });
-            }
-
-            // Cap at 40 stories
-            const finalStories = uniqueStories.slice(0, 40);
+            // Cap at 50 stories
+            const finalStories = uniqueStories.slice(0, 50);
 
             console.log(`Editorial Director: Selected ${finalStories.length} stories`);
             console.log(`  - LEAD: ${finalStories.filter(s => s.layout === 'LEAD_STORY').length}`);
             console.log(`  - FEATURE: ${finalStories.filter(s => s.layout === 'FEATURE').length}`);
             console.log(`  - BRIEF: ${finalStories.filter(s => s.layout === 'BRIEF').length}`);
 
+            // Log category breakdown
+            const breakdown: Record<string, number> = {};
+            for (const s of finalStories) {
+                breakdown[s.category] = (breakdown[s.category] || 0) + 1;
+            }
+            console.log(`  - Categories:`, breakdown);
+
             return {
                 blueprint: { stories: finalStories },
-                reasoning: parsed.reasoning || 'AI-selected front page'
+                reasoning: parsed.reasoning || 'AI-selected front page with balanced coverage'
             };
 
         } catch (error) {
-            console.error('Editorial Director failed, using fallback:', error);
-
-            // SMART FALLBACK: Apply editorial rules algorithmically
-            // 1. Filter out SPORTS and CULTURE (they're not news)
-            // 2. Sort by score (which now weights category importance)
-            // 3. Pick the top stories
-
-            const newsworthy = candidates.filter(m =>
-                m.category !== 'SPORTS' && m.category !== 'CULTURE'
-            );
-
-            // Sort by score descending
-            newsworthy.sort((a, b) => b.scores.total - a.scores.total);
-
-            // Take top 25, add 2 culture/sports if we have room
-            const mainStories = newsworthy.slice(0, 25);
-            const entertainmentFiller = candidates
-                .filter(m => m.category === 'SPORTS' || m.category === 'CULTURE')
-                .slice(0, 2);
-
-            const allFallback = [...mainStories, ...entertainmentFiller];
-
-            // Find the best LEAD candidate (highest score in TECH or CRYPTO - our core audience)
-            const leadCandidate = allFallback.find(m =>
-                m.category === 'TECH' || m.category === 'CRYPTO'
-            ) || allFallback[0];
-
-            // Assign layouts: 1 LEAD, 5 FEATURE, rest BRIEF
-            const fallbackStories = allFallback.map((m, i) => {
-                let layout: StoryLayout;
-                if (m.id === leadCandidate?.id) {
-                    layout = 'LEAD_STORY';
-                } else if (i < 6) { // positions 1-5 (after lead) become FEATURE
-                    layout = 'FEATURE';
-                } else {
-                    layout = 'BRIEF';
-                }
-                return { ...m, layout };
-            });
-
-            console.log(`Fallback selected: ${fallbackStories.length} stories (${newsworthy.length} newsworthy, ${entertainmentFiller.length} filler)`);
-
-            return {
-                blueprint: { stories: fallbackStories },
-                reasoning: 'Fallback: Top newsworthy candidates (SPORTS/CULTURE filtered)'
-            };
+            console.error('Editorial Director failed, using algorithmic fallback:', error);
+            return this.algorithmicFallback(candidateTopics);
         }
+    }
+
+    /**
+     * Enforce layout constraints: exactly 1 LEAD, 8 FEATURE, rest BRIEF
+     */
+    private enforceLayoutConstraints(stories: Story[]): void {
+        // Ensure exactly 1 LEAD_STORY
+        const leads = stories.filter(s => s.layout === 'LEAD_STORY');
+        if (leads.length === 0 && stories.length > 0) {
+            stories[0].layout = 'LEAD_STORY';
+        } else if (leads.length > 1) {
+            leads.slice(1).forEach(s => { s.layout = 'FEATURE'; });
+        }
+
+        // Ensure exactly 8 FEATURE stories
+        const features = stories.filter(s => s.layout === 'FEATURE');
+        if (features.length < 8) {
+            const briefs = stories.filter(s => s.layout === 'BRIEF');
+            const needed = 8 - features.length;
+            briefs.slice(0, needed).forEach(s => { s.layout = 'FEATURE'; });
+        } else if (features.length > 8) {
+            features.slice(8).forEach(s => { s.layout = 'BRIEF'; });
+        }
+    }
+
+    /**
+     * Algorithmic fallback when AI fails
+     * Prioritizes CONFLICT stories for lead (human stakes > financial stakes)
+     */
+    private algorithmicFallback(topics: Topic[]): EditorialDirectorOutput {
+        console.log('Using algorithmic fallback for story selection');
+
+        // Take top 50 topics by score (already balanced by selectBalancedTopics)
+        const top50 = topics.slice(0, 50);
+
+        // Find the best CONFLICT story for lead (human stakes > financial)
+        // Priority: CONFLICT > POLITICS > everything else
+        const leadPriority: MarketCategory[] = ['CONFLICT', 'POLITICS', 'FINANCE', 'TECH', 'CRYPTO', 'BUSINESS', 'SCIENCE', 'CULTURE', 'SPORTS', 'OTHER'];
+
+        let leadIndex = 0;
+        for (const category of leadPriority) {
+            const idx = top50.findIndex(t => t.category === category);
+            if (idx !== -1) {
+                leadIndex = idx;
+                break;
+            }
+        }
+
+        const stories: Story[] = top50.map((topic, i) => {
+            let layout: StoryLayout;
+            if (i === leadIndex) {
+                layout = 'LEAD_STORY';
+            } else if (i < 9 || (i === 9 && leadIndex !== 0)) {
+                layout = 'FEATURE';
+            } else {
+                layout = 'BRIEF';
+            }
+            return { ...topic.primaryMarket, layout };
+        });
+
+        // Ensure exactly 1 LEAD and 8 FEATURE
+        this.enforceLayoutConstraints(stories);
+
+        console.log(`Fallback selected: ${stories.length} stories (Lead: ${stories.find(s => s.layout === 'LEAD_STORY')?.category})`);
+
+        return {
+            blueprint: { stories },
+            reasoning: 'Algorithmic selection: top 50 topics with conflict-first lead priority'
+        };
     }
 }

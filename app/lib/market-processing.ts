@@ -93,19 +93,19 @@ export const SHORT_TERM_SPORTS_PATTERNS = [
     /\bweek\s*\d+\b/i,      // "Week 15"
 ];
 
-// Editorial bias: TECH TWITTER & POLYMARKET NATIVE AUDIENCE
-// Prioritize tech, crypto, and forward-looking markets
+// UNBIASED EDITORIAL: All categories compete on pure newsworthiness
+// No artificial boosts or penalties - let stories stand on merit
 export const CATEGORY_INTEREST: Record<MarketCategory, number> = {
-    TECH: 1.8,       // AI, breakthroughs - THIS IS THE CORE AUDIENCE
-    CRYPTO: 1.6,     // DeFi, tokens, market structure - Polymarket natives care
-    BUSINESS: 1.4,   // Startups, IPOs, M&A, funding rounds
-    SCIENCE: 1.3,    // Research, space, breakthroughs
-    POLITICS: 1.2,   // Elections, policy - still matters but not the focus
-    CONFLICT: 1.0,   // Wars, geopolitics - important but not primary
-    FINANCE: 1.0,    // Fed, rates - market-moving
-    CULTURE: 0.6,    // Entertainment - NOT NEWS
-    SPORTS: 0.4,     // Individual games are NOT news
-    OTHER: 0.7,
+    TECH: 1.0,
+    CRYPTO: 1.0,
+    BUSINESS: 1.0,
+    SCIENCE: 1.0,
+    POLITICS: 1.0,
+    CONFLICT: 1.0,
+    FINANCE: 1.0,
+    CULTURE: 1.0,
+    SPORTS: 1.0,
+    OTHER: 1.0,
 };
 
 // Keywords for categorization
