@@ -6,7 +6,7 @@ import { ArticleWriterAgent, generateDateline } from './article-agent';
 import { ContrarianAgent } from './contrarian-agent';
 import { IntelligenceAgent, identifyMovingMarkets } from './intelligence-agent';
 import { getSupabase, EditionInsert } from '../lib/supabase';
-import { EditorialData, Market, MarketGroup, Datelines } from '../../types';
+import { EditorialData, Market, MarketGroup, Datelines, FrontPageBlueprint } from '../../types';
 
 export const revalidate = 0; // Disable Vercel cache since we manage it via Supabase
 
@@ -77,59 +77,74 @@ export async function getEditorial(markets: Market[], groups: MarketGroup[] = []
     }
   }
 
-  // === MULTI-AGENT ORCHESTRATION ===
+  // === MULTI-AGENT ORCHESTRATION (Parallel Execution) ===
 
-  // 1. EDITORIAL DIRECTOR AGENT: Select 25-35 newsworthy stories AND assign layouts
-  console.log('=== EDITORIAL DIRECTOR AGENT ===');
-  const editorialDirectorAgent = new EditorialDirectorAgent(apiKey);
-  const { blueprint, reasoning } = await editorialDirectorAgent.call({ markets });
-  console.log(`Editorial Director reasoning: ${reasoning}`);
-
-  // 2. GENERATE DATELINES (deterministic, instant)
-  console.log('=== GENERATING DATELINES (deterministic) ===');
-  const datelines: Datelines = {};
-  for (const story of blueprint.stories) {
-    datelines[story.id] = generateDateline(story);
+  // Helper: Generate all datelines (deterministic, instant)
+  function generateAllDatelines(blueprint: FrontPageBlueprint): Datelines {
+    const datelines: Datelines = {};
+    for (const story of blueprint.stories) {
+      datelines[story.id] = generateDateline(story);
+    }
+    return datelines;
   }
 
-  // 3. HEADLINE WRITER AGENT
-  console.log('=== HEADLINE WRITER AGENT ===');
-  const { headlines } = await new HeadlineWriterAgent(apiKey).call({ blueprint });
+  // Prepare moving markets BEFORE Phase 2 (needed for Intelligence agent)
+  const priceHistory = markets.reduce((acc, m) => {
+    const oldPrice = m.yesPrice - (m.priceChange24h || 0) / 100;
+    acc[m.id] = oldPrice;
+    return acc;
+  }, {} as Record<string, number>);
+  const movingMarkets = identifyMovingMarkets(markets, priceHistory, 5);
 
-  // 4. ARTICLE WRITER AGENT: Write the articles
-  console.log('=== ARTICLE WRITER AGENT ===');
-  const articleAgent = new ArticleWriterAgent(apiKey);
-  const { content, editorialNote } = await articleAgent.call({
-    blueprint,
-    headlines,
+  // PHASE 1: Editorial Director (must run first to produce blueprint)
+  console.log('=== PHASE 1: EDITORIAL DIRECTOR AGENT ===');
+  console.time('Phase 1: Editorial Director');
+  const editorialDirectorAgent = new EditorialDirectorAgent(apiKey);
+  const { blueprint, reasoning } = await editorialDirectorAgent.call({ markets });
+  console.timeEnd('Phase 1: Editorial Director');
+  console.log(`Editorial Director reasoning: ${reasoning}`);
+
+  // PHASE 2: Run in parallel (all depend only on blueprint or original markets)
+  console.log('=== PHASE 2: DATELINES + HEADLINES + INTELLIGENCE (parallel) ===');
+  console.time('Phase 2: Parallel agents');
+  const [
     datelines,
-    groupByMarketId,
-  });
-
-  // 5. CONTRARIAN AGENT: Alpha signals for featured stories
-  console.log('=== CONTRARIAN AGENT (Alpha Signals) ===');
-  const contrarianAgent = new ContrarianAgent(apiKey);
-  const { takes: contrarianTakes } = await contrarianAgent.call({
-    blueprint,
-    headlines,
-    featuredOnly: true
-  });
-  console.log(`Contrarian Agent: Generated ${Object.keys(contrarianTakes).length} alpha signals`);
-
-  // 6. INTELLIGENCE AGENT: Analyze moving markets
-  console.log('=== INTELLIGENCE AGENT (Market Movers) ===');
-  const movingMarkets = identifyMovingMarkets(
-    markets,
-    markets.reduce((acc, m) => {
-      const oldPrice = m.yesPrice - (m.priceChange24h || 0) / 100;
-      acc[m.id] = oldPrice;
-      return acc;
-    }, {} as Record<string, number>),
-    5 // 5pp threshold
-  );
-  const intelligenceAgent = new IntelligenceAgent(apiKey);
-  const { briefs: intelligenceBriefs } = await intelligenceAgent.call({ movingMarkets });
+    { headlines },
+    { briefs: intelligenceBriefs }
+  ] = await Promise.all([
+    // Datelines (instant, deterministic)
+    Promise.resolve(generateAllDatelines(blueprint)),
+    // Headlines (depends on blueprint)
+    new HeadlineWriterAgent(apiKey).call({ blueprint }),
+    // Intelligence (uses original markets, not blueprint)
+    new IntelligenceAgent(apiKey).call({ movingMarkets })
+  ]);
+  console.timeEnd('Phase 2: Parallel agents');
   console.log(`Intelligence Agent: Generated ${Object.keys(intelligenceBriefs).length} intelligence briefs`);
+
+  // PHASE 3: Run in parallel (both need headlines from Phase 2)
+  console.log('=== PHASE 3: ARTICLES + CONTRARIAN (parallel) ===');
+  console.time('Phase 3: Parallel agents');
+  const [
+    { content, editorialNote },
+    { takes: contrarianTakes }
+  ] = await Promise.all([
+    // Articles (needs blueprint, headlines, datelines)
+    new ArticleWriterAgent(apiKey).call({
+      blueprint,
+      headlines,
+      datelines,
+      groupByMarketId,
+    }),
+    // Contrarian (needs blueprint, headlines)
+    new ContrarianAgent(apiKey).call({
+      blueprint,
+      headlines,
+      featuredOnly: true
+    })
+  ]);
+  console.timeEnd('Phase 3: Parallel agents');
+  console.log(`Contrarian Agent: Generated ${Object.keys(contrarianTakes).length} alpha signals`);
 
   // Construct final response
   const response: EditorialData = {
