@@ -1,4 +1,5 @@
 import React from 'react';
+import Link from 'next/link';
 
 interface ContestedMarket {
     title: string;
@@ -101,7 +102,7 @@ export default function Footer({ contestedMarkets }: FooterProps) {
                 <h1 className="font-blackletter text-4xl text-gray-400 opacity-50">The Polymarket Times</h1>
                 <div className="text-[9px] uppercase tracking-[0.3em] text-gray-400 mt-1">Est 2025 • New York • London • The Metaverse</div>
                 <div className="mt-3 text-xs text-gray-500">
-                    An experiment by <a href="https://x.com/ankitkr0" target="_blank" rel="noopener noreferrer" className="underline hover:text-black">@ankitkr0</a> • <a href="/sponsor" className="underline hover:text-black font-bold">Sponsor Us</a>
+                    An experiment by <a href="https://x.com/ankitkr0" target="_blank" rel="noopener noreferrer" className="underline hover:text-black">@ankitkr0</a> • <a href="/sponsor" className="underline hover:text-black font-bold">Sponsor Us</a> • <Link href="/archives" className="underline hover:text-black">Archives</Link>
                 </div>
             </div>
         </footer>

@@ -70,7 +70,7 @@ export default function LeadStory({
                             </span>
                         </div>
                     )}
-                    <h1 className="text-6xl md:text-8xl font-display font-bold leading-[0.9] mb-4 tracking-tight transition-all duration-300 group-hover:scale-[1.01] group-hover:text-black/90">
+                    <h1 className="text-3xl sm:text-5xl md:text-8xl font-display font-bold leading-[0.9] mb-4 tracking-tight transition-all duration-300 group-hover:scale-[1.01] group-hover:text-black/90">
                         {headline}
                     </h1>
                     <div className="h-0.5 w-0 bg-black mx-auto transition-all duration-500 group-hover:w-1/3"></div>
@@ -83,7 +83,7 @@ export default function LeadStory({
                 </div>
 
                 {/* Social Share Buttons */}
-                <div className="flex justify-center items-center gap-4 mt-4">
+                <div className="flex justify-center items-center gap-2 md:gap-4 mt-4">
                     <a
                         href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`📰 ${headline}\n\nRead the full dispatch from The Polymarket Times:`)}&url=${encodeURIComponent(link)}`}
                         target="_blank"

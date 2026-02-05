@@ -8,6 +8,7 @@ import AlphaSignals from './components/AlphaSignals';
 import MarketTicker from './components/MarketTicker';
 import MainContentWrapper from './components/MainContentWrapper';
 import ReadableModeToggle from './components/ReadableModeToggle';
+import MobileQuickStats from './components/MobileQuickStats';
 import OnboardingFlow from './components/OnboardingFlow';
 import { BreakingAlertsTicker, LastUpdatedIndicator, RefreshButton } from './components/LiveUpdates';
 import { getMarkets } from './api/markets/route';
@@ -320,6 +321,9 @@ export default async function Home() {
       {/* Mobile-only collapsible sidebar */}
       <MobileSidebar briefs={marketBriefs} specialReport={specialReportProps} />
 
+      {/* Mobile Quick Stats - crypto prices and Fed data for mobile users */}
+      <MobileQuickStats cryptoPrices={cryptoData || undefined} fedData={fedData} />
+
       <MainContentWrapper>
         <main className="grid grid-cols-1 md:grid-cols-12 gap-8 border-b-4 border-double-thick border-black pb-8">
 
@@ -329,12 +333,12 @@ export default async function Home() {
           </div>
 
           {/* Center Column (Approx 60%) */}
-          <div className="md:col-span-7 border-r border-black pr-6">
+          <div className="md:col-span-7 md:border-r md:border-black pr-0 md:pr-6">
             <LeadStory {...leadStoryProps} />
           </div>
 
-          {/* Right Column (Approx 20%) */}
-          <div className="md:col-span-3">
+          {/* Right Column (Approx 20%) - Hidden on mobile, content moved to MobileQuickStats */}
+          <div className="hidden md:block md:col-span-3">
             <RightSidebar techStory={techStoryProps} fedData={fedData} />
           </div>
 

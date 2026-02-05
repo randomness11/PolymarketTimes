@@ -23,8 +23,31 @@ const garamond = EB_Garamond({
 });
 
 export const metadata: Metadata = {
-  title: "Polymarket Times",
-  description: "Market insights and predictions.",
+  title: "The Polymarket Times",
+  description: "Tomorrow's news today. The world's premier prediction market chronicle.",
+  metadataBase: new URL('https://polymarkettimes.com'),
+  openGraph: {
+    title: "The Polymarket Times",
+    description: "Tomorrow's news today. The world's premier prediction market chronicle.",
+    url: 'https://polymarkettimes.com',
+    siteName: 'The Polymarket Times',
+    images: [
+      {
+        url: '/api/og?edition=latest',
+        width: 1200,
+        height: 630,
+        alt: 'The Polymarket Times',
+      },
+    ],
+    locale: 'en_US',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: "The Polymarket Times",
+    description: "Tomorrow's news today. The world's premier prediction market chronicle.",
+    images: ['/api/og?edition=latest'],
+  },
 };
 
 export default function RootLayout({

@@ -53,98 +53,102 @@ function generateFallbackHeadline(market: Market | null): string {
 
     const S = subject.toUpperCase();
 
-    // Generate headline based on odds and direction
+    // Generate headline based on odds and direction - TOMORROW'S NEWSPAPER STYLE
     if (odds >= 85) {
-        // Near certain
+        // Near certain - DECLARE VICTORY (past tense, it happened)
         const yesOptions = [
-            `${S} LOCKED IN`,
-            `${S} ALL BUT CERTAIN`,
-            `${S} SECURES VICTORY`,
-            `${S}: DONE DEAL`,
-            `${S} CLINCHES IT`,
+            `${S}: IT'S DONE`,
+            `${S} CLINCHES VICTORY`,
             `${S} SEALS THE DEAL`,
+            `${S}: HISTORY MADE`,
+            `${S} DELIVERS`,
+            `${S} TRIUMPHS`,
+            `${S}: MISSION ACCOMPLISHED`,
+            `${S} CROSSES FINISH LINE`,
         ];
         const noOptions = [
-            `${S} ALL BUT DEAD`,
-            `${S} FLATLINES`,
+            `${S}: IT'S OVER`,
+            `${S} FALLS SHORT`,
             `${S} COLLAPSES`,
-            `${S}: GAME OVER`,
-            `${S} FALLS APART`,
+            `${S}: DREAMS CRUSHED`,
             `${S} CRUMBLES`,
+            `${S}: THE END`,
+            `${S} GOES DOWN`,
+            `${S}: FINAL VERDICT IN`,
         ];
         return pickRandom(isYes ? yesOptions : noOptions, market.id);
     } else if (odds >= 70) {
-        // Favored
+        // Favored - SECURED VICTORY (near-certain, completed)
         const yesOptions = [
-            `${S} ON TRACK`,
-            `${S} PULLS AHEAD`,
-            `${S} BUILDS LEAD`,
-            `${S} GAINS GROUND`,
-            `${S} EYES FINISH LINE`,
-            `${S} TAKES COMMAND`,
-            `${S} SEIZES MOMENTUM`,
+            `${S} LOCKED IN VICTORY`,
+            `${S} SECURED THE WIN`,
+            `${S} PULLED AHEAD`,
+            `${S} CLINCHED IT`,
+            `${S} TOOK COMMAND`,
+            `${S} DOMINATED`,
+            `${S} SEALED IT`,
         ];
         const noOptions = [
-            `${S} FADING FAST`,
-            `${S} LOSES STEAM`,
-            `${S} IN TROUBLE`,
-            `${S} SLIPS AWAY`,
-            `${S} FACES HEADWINDS`,
-            `${S} STUMBLES`,
+            `${S} FADED AWAY`,
+            `${S} LOST STEAM`,
+            `${S} FELL APART`,
+            `${S} SLIPPED AWAY`,
+            `${S} STUMBLED`,
+            `${S} COULDN'T HOLD ON`,
         ];
         return pickRandom(isYes ? yesOptions : noOptions, market.id);
     } else if (odds >= 55) {
-        // Slight edge
+        // Slight edge - DRAMATIC TENSION (happening NOW)
         const yesOptions = [
-            `${S} EDGES AHEAD`,
-            `${S} TAKES SLIM LEAD`,
-            `${S} INCHES FORWARD`,
-            `${S} HOLDS NARROW EDGE`,
-            `${S} NUDGES AHEAD`,
-            `${S}: ADVANTAGE FORMS`,
+            `${S}: NAIL-BITER FINISH`,
+            `${S} EDGED OUT RIVALS`,
+            `${S}: PHOTO FINISH`,
+            `${S} HELD ON`,
+            `${S}: SQUEAKER WIN`,
+            `${S} SURVIVED`,
         ];
         const noOptions = [
-            `${S} LOSING GROUND`,
-            `${S} SLIPS BACK`,
-            `${S} TRAILS NARROWLY`,
-            `${S} FALLS BEHIND`,
-            `${S}: LEAD NARROWS`,
-            `${S} UNDER PRESSURE`,
+            `${S}: SLIPPED AWAY`,
+            `${S} LOST BY A HAIR`,
+            `${S}: HEARTBREAKER`,
+            `${S} FELL SHORT`,
+            `${S}: SO CLOSE`,
+            `${S} COULDN'T FINISH`,
         ];
         return pickRandom(isYes ? yesOptions : noOptions, market.id);
     } else if (odds >= 45) {
-        // Toss-up - this is the interesting zone
+        // Toss-up - MAXIMUM DRAMA (unfolding NOW)
         const options = [
-            `${S}: HANGS IN BALANCE`,
-            `${S}: TOO CLOSE TO CALL`,
-            `${S}: DEAD HEAT`,
-            `${S}: BATTLE RAGES`,
-            `${S}: NECK AND NECK`,
-            `${S}: COIN FLIP`,
-            `${S}: ANYONE'S GAME`,
-            `${S}: RACE TIGHTENS`,
-            `${S}: SHOWDOWN LOOMS`,
-            `${S}: TENSION MOUNTS`,
+            `${S}: WENT TO THE WIRE`,
+            `${S}: PHOTO FINISH`,
+            `${S}: DEAD HEAT DECIDED`,
+            `${S}: BATTLE DECIDED`,
+            `${S}: COIN FLIP LANDED`,
+            `${S}: FINAL SECONDS`,
+            `${S}: DRAMA UNTIL THE END`,
+            `${S}: OVERTIME FINISH`,
+            `${S}: THRILLER CONCLUDED`,
+            `${S}: BREATHLESS FINALE`,
         ];
         return pickRandom(options, market.id);
     } else {
-        // Underdog
+        // Underdog - STUNNING UPSET (the impossible happened!)
         const yesOptions = [
-            `${S} SURGES`,
-            `${S} MOUNTS COMEBACK`,
-            `${S} DEFIES ODDS`,
-            `${S} FIGHTS BACK`,
-            `${S}: UPSET BREWING?`,
-            `${S} REFUSES TO DIE`,
-            `${S} RALLIES`,
+            `${S}: STUNNING UPSET`,
+            `${S} SHOCKED THE WORLD`,
+            `${S} DEFIED ALL ODDS`,
+            `${S}: MIRACLE HAPPENED`,
+            `${S} PULLED IT OFF`,
+            `${S}: NOBODY SAW IT COMING`,
+            `${S}: THE IMPOSSIBLE`,
         ];
         const noOptions = [
-            `${S} FACES LONG ODDS`,
-            `${S}: UPHILL BATTLE`,
-            `${S} CLINGS TO HOPE`,
-            `${S}: SLIM CHANCE`,
-            `${S} FIGHTS GRAVITY`,
-            `${S}: MIRACLE NEEDED`,
+            `${S}: SHOCK COLLAPSE`,
+            `${S} STUNNED EVERYONE`,
+            `${S}: UNTHINKABLE HAPPENED`,
+            `${S}: TOTAL REVERSAL`,
+            `${S} CAME FROM NOWHERE`,
+            `${S}: UPSET FOR THE AGES`,
         ];
         return pickRandom(isYes ? yesOptions : noOptions, market.id);
     }
@@ -182,13 +186,22 @@ export class HeadlineWriterAgent implements Agent<HeadlineWriterInput, HeadlineW
                 return `[${i}] "${m.question}" → ${odds}% ${yesWinning ? 'YES' : 'NO'}`;
             }).join('\n');
 
-            const prompt = `You are a LEGENDARY newspaper headline editor. Write DRAMATIC, DECLARATIVE headlines.
+            const prompt = `You are writing TOMORROW'S FRONT PAGE. The outcomes have ALREADY HAPPENED.
 
 ═══════════════════════════════════════════════════════════
-ICONIC HEADLINES TO EMULATE:
+YOU ARE A TIME TRAVELER FROM TOMORROW
+═══════════════════════════════════════════════════════════
+Write headlines AS IF the likely outcome has ALREADY OCCURRED:
+- 85%+ odds: "TRUMP WINS" (accomplished fact, it's done)
+- 70-85%: "TRUMP CLINCHES NOMINATION" (near-certain, completed)
+- 50-70%: "FINAL HOURS: TRUMP VS HARRIS" (dramatic tension, unfolding NOW)
+- <50%: "TRUMP PULLS OFF STUNNING UPSET" (the underdog triumphed!)
+
+═══════════════════════════════════════════════════════════
+ICONIC PAST-TENSE HEADLINES TO EMULATE:
 ═══════════════════════════════════════════════════════════
 • "MEN WALK ON MOON" • "NIXON RESIGNS" • "WALL FALLS" • "TRUMP TRIUMPHS"
-• "WAR DECLARED" • "PEACE AT LAST" • "MARKETS CRASH" • "FED HOLDS LINE"
+• "IT'S OVER" • "THEY DID IT" • "HISTORY MADE" • "THE IMPOSSIBLE HAPPENED"
 
 ═══════════════════════════════════════════════════════════
 STORIES:
@@ -199,29 +212,30 @@ ${batchStories}
 HEADLINE RULES:
 ═══════════════════════════════════════════════════════════
 
-1. **DECLARE, DON'T ASK**
-   - If odds >70%: Write as FACT ("TRUMP WINS" not "Will Trump win?")
-   - If odds 50-70%: Write as TENSION ("RACE TIGHTENS", "LEAD NARROWS")
-   - If odds <50%: Write as DRAMA ("UNDERDOG SURGES", "COMEBACK BREWING")
+1. **REPORT THE OUTCOME, NOT THE SPECULATION**
+   - If odds >70%: Declare VICTORY. Past tense. It happened.
+     "BITCOIN SMASHES $100K" not "BITCOIN EYES $100K"
+   - If odds 50-70%: Maximum TENSION. It's happening NOW.
+     "DOWN TO THE WIRE" not "Race tightens"
+   - If odds <50%: STUNNING UPSET energy. The underdog won!
+     "NOBODY SAW THIS COMING" not "Underdog surges"
 
-2. **MAX 6 WORDS** — Active voice. NO questions. ALL CAPS.
+2. **MAX 6 WORDS** — Past tense or present perfect. NO questions. ALL CAPS.
 
-3. **VERB DIVERSITY** — Rotate through powerful verbs:
-   SURGES, PLUNGES, CLINCHES, LOCKS IN, EYES, RACES TOWARD,
-   FACES, BATTLES, THREATENS, SEIZES, SWEEPS, CRUSHES, EDGES,
-   STUNS, RATTLES, SECURES, CLAIMS, NEARS, DEFIES, HOLDS
+3. **VICTORY VERBS** (past tense):
+   CLINCHED, SECURED, CRUSHED, SMASHED, SEALED, LOCKED IN,
+   TRIUMPHED, CONQUERED, DOMINATED, SWEPT, STUNNED, SHOCKED,
+   DELIVERED, FINISHED, COMPLETED, ACHIEVED, PULLED OFF
 
 4. **AVOID THESE**:
-   - Hedging: "COULD", "MAY", "MIGHT", "POSSIBLY"
-   - Starting with "WILL"
-   - Hyperbole without movement: "SKYROCKETS" requires >10% move
-   - Generic: "MARKETS MOVE" (move WHERE?)
+   - Future speculation: "COULD", "MAY", "MIGHT", "EYES", "ON TRACK"
+   - Present speculation: "WILL", "SET TO", "EXPECTED TO"
+   - Wimpy hedging: "POSSIBLY", "LIKELY", "APPEARS"
 
-5. **SPECIFICITY BEATS DRAMA**
-   - BAD: "BIG CHANGES AHEAD"
-   - GOOD: "BITCOIN EYES $100K"
-   - BAD: "ELECTION UPDATE"
-   - GOOD: "HARRIS SEIZES LEAD"
+5. **TABLOID ENERGY**
+   - "IT'S DONE" not "Outcome appears settled"
+   - "HISTORY MADE" not "Historical significance achieved"
+   - "THEY DID IT" not "Success has been achieved"
 
 ═══════════════════════════════════════════════════════════
 RESPOND WITH JSON ONLY:

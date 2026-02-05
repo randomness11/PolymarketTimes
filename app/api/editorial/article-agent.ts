@@ -97,179 +97,670 @@ function generateFallbackArticle(story: Story): string {
 
 function getBriefTemplates(odds: number, vol: string): string[] {
     if (odds >= 85) {
+        // VICTORY LAP - It happened. Celebrate or mourn.
         return [
-            `The outcome appears locked in at ${odds}%. With ${vol} wagered, traders see this as all but certain. The question now shifts from "if" to "what comes next."`,
-            `At ${odds}%, this is as close to a sure thing as prediction markets get. The ${vol} in volume confirms: serious money has already placed its bets.`,
-            `Markets price this at ${odds}%—virtual certainty. With ${vol} on the line, the contrarians have gone quiet. The story is all but written.`,
-            `The numbers don't lie: ${odds}% odds, ${vol} wagered. At these levels, traders aren't speculating—they're front-running the inevitable.`,
-            `Locked at ${odds}%. The ${vol} in trading volume tells the story: this outcome has graduated from probability to near-certainty.`,
+            `Done. Finished. ${odds}% and counting. The ${vol} screamed it from the rooftops.`,
+            `It's over. The bulls won. ${vol} proved everyone right.`,
+            `Bears in shambles. ${odds}% says it all. Pack it up.`,
+            `The verdict is in: ${odds}%. ${vol} sealed the deal. Next question.`,
+            `Called it. Nailed it. Banked it. ${odds}% locked.`,
+            `Champagne corks. Crying traders. One number: ${odds}%.`,
+            `The dust settles. The winners count their gains. ${vol} on the table.`,
+            `History made. ${odds}% certainty. ${vol} in volume. The end.`,
+            `They laughed. Then ${vol} flowed in. Who's laughing now?`,
+            `${odds}%. That's it. That's the story. Move on.`,
+            `The contrarians went quiet. ${odds}% will do that.`,
+            `Lock it in. Frame it. ${odds}% for the history books.`,
+            `Not even close. ${odds}% crushed all doubt.`,
+            `The math doesn't care about your feelings: ${odds}%.`,
+            `Inevitable. Unstoppable. ${odds}%. ${vol} confirmed it.`,
+            `Game. Set. Match. ${odds}% ends all arguments.`,
+            `The story wrote itself. ${odds}% was just the headline.`,
+            `Fait accompli. ${odds}%. The ${vol} was just a formality.`,
+            `Zero suspense. ${odds}% from start to finish.`,
+            `The only surprise? That anyone doubted it. ${odds}%.`,
         ];
     } else if (odds >= 70) {
+        // STRONG CONVICTION - Victory secured, but acknowledge the fight
         return [
-            `Markets favor this outcome at ${odds}%, with ${vol} in trading volume. The momentum is clear, though the final chapter remains unwritten.`,
-            `At ${odds}%, the favorite has emerged. The ${vol} wagered suggests conviction, but prediction markets have humbled certainty before.`,
-            `The ledger shows ${odds}% and ${vol} in volume. Strong position, but not unassailable. The next development could cement or challenge this lead.`,
-            `Trading at ${odds}% with ${vol} behind it. The market sees a clear direction, though leaves room for the unexpected.`,
-            `Odds sit at ${odds}%, backed by ${vol}. Favored, yes. Guaranteed, no. The gap between the two is where stories get interesting.`,
+            `The lead held. ${odds}% locked in. ${vol} backed the winner.`,
+            `It's done. Not a blowout, but a win. ${odds}% sealed it.`,
+            `The favorite delivered. ${odds}%. ${vol} on the right side.`,
+            `Doubters silenced. ${odds}% speaks louder than words.`,
+            `The momentum was real. ${odds}% proved it. ${vol} rewarded.`,
+            `Clear winner. ${odds}%. The ${vol} knew all along.`,
+            `Conviction paid off. ${odds}% delivers for the believers.`,
+            `The path was bumpy. The destination was ${odds}%.`,
+            `Strong finish. ${odds}%. The ${vol} made the right call.`,
+            `Not a landslide, but decisive. ${odds}% writes the ending.`,
+            `The smart money was right again. ${odds}%. ${vol} in pocket.`,
+            `Close enough to sweat, far enough to win. ${odds}%.`,
+            `Victory secured at ${odds}%. ${vol} celebrates tonight.`,
+            `The favorite held serve. ${odds}% closes the book.`,
+            `Earned, not given. ${odds}% tells the story.`,
+            `The lead never wavered. ${odds}% from wire to wire.`,
+            `Pressure tested. ${odds}% passed. ${vol} vindicated.`,
+            `The thesis played out. ${odds}% is the final grade.`,
+            `Solid. Steady. ${odds}%. The ${vol} got it right.`,
+            `No miracles needed. ${odds}% was always enough.`,
         ];
     } else if (odds >= 55) {
+        // NAIL-BITER - Photo finish energy
         return [
-            `A narrow edge emerges at ${odds}%. With ${vol} on the line, traders see a slight advantage but no guarantees. Every development matters.`,
-            `The margin is razor-thin: ${odds}%. With ${vol} wagered, neither side can claim dominance. This is genuine uncertainty.`,
-            `At ${odds}%, this qualifies as contested territory. The ${vol} in volume reflects a market that can't quite make up its mind.`,
-            `Slim lead at ${odds}%, with ${vol} tracking the action. The slight edge could evaporate with a single headline.`,
-            `Markets show ${odds}%—close enough to keep both sides nervous. The ${vol} wagered suggests this one matters.`,
+            `Down to the wire. ${odds}% decided it. Barely.`,
+            `Photo finish. ${odds}% was the margin of victory.`,
+            `Sweat-soaked traders, ${odds}% relief. That was close.`,
+            `The narrowest win. ${odds}%. Hearts were pounding.`,
+            `Squeaker. ${odds}% after a white-knuckle ride.`,
+            `They held on. Barely. ${odds}% by a thread.`,
+            `The edge held. ${odds}%. ${vol} exhales.`,
+            `Too close for comfort. ${odds}% got it done.`,
+            `Nail-biter resolved at ${odds}%. Sleep well tonight.`,
+            `The margin was nothing. The win was everything. ${odds}%.`,
+            `Survived. ${odds}%. The ${vol} nearly had heart attacks.`,
+            `One tick away from chaos. ${odds}% delivered.`,
+            `The longest final minute. ${odds}% at the buzzer.`,
+            `Almost wasn't. Then was. ${odds}%.`,
+            `The slim lead became a slim win. ${odds}%.`,
+            `Fingers crossed until ${odds}% made it official.`,
+            `Sweaty palms, ${odds}% relief. Done.`,
+            `The thinnest of margins. ${odds}%. It counts.`,
+            `Could've gone either way. Went ${odds}%.`,
+            `Drama until the last second. ${odds}% ends it.`,
         ];
     } else if (odds >= 45) {
+        // COIN FLIP - Maximum tension, then resolution
         return [
-            `Dead heat at ${odds}%. With ${vol} wagered, this remains genuinely uncertain. Markets await the next signal to break the deadlock.`,
-            `The ultimate toss-up: ${odds}% odds, ${vol} in volume. Prediction markets rarely get more contested than this.`,
-            `At ${odds}%, this is anyone's game. The ${vol} trading volume reflects a market genuinely split on the outcome.`,
-            `Markets can't decide: ${odds}% with ${vol} wagered. When odds hover here, the next development will move mountains.`,
-            `Perfectly balanced at ${odds}%. The ${vol} in volume represents conviction on both sides. Something has to give.`,
+            `Coin flip landed. ${odds}%. Someone's celebrating.`,
+            `Dead heat decided. ${odds}% broke the tie.`,
+            `The toss-up resolved. ${odds}%. Nobody was sure.`,
+            `50-50 no more. ${odds}% picked a side.`,
+            `The gridlock broke. ${odds}% claims victory.`,
+            `Everyone held their breath. ${odds}% exhaled.`,
+            `The split resolved at ${odds}%. One side wins.`,
+            `Pure uncertainty became ${odds}% certainty.`,
+            `The stalemate ended. ${odds}%. History moves on.`,
+            `When in doubt, ${odds}% figured it out.`,
+            `The deadlock shattered. ${odds}% stands alone.`,
+            `Neither side blinked. ${odds}% decided anyway.`,
+            `The world's longest coin flip: ${odds}%.`,
+            `Chaos crystallized into ${odds}%. Order restored.`,
+            `The knife's edge dulled. ${odds}% won out.`,
+            `Overtime finished. ${odds}%. What a ride.`,
+            `The great debate settled at ${odds}%.`,
+            `Schrodinger's market collapsed to ${odds}%.`,
+            `The tie-breaker: ${odds}%. Final answer.`,
+            `Two sides entered. ${odds}% left standing.`,
         ];
     } else {
+        // UPSET - The impossible happened
         return [
-            `Long odds at ${odds}%, but ${vol} in volume suggests believers remain. The underdog scenario isn't dead—just improbable.`,
-            `At ${odds}%, this sits in upset territory. The ${vol} wagered says some traders see something the market doesn't.`,
-            `The contrarians are making their stand: ${odds}% odds, ${vol} in play. Improbable doesn't mean impossible.`,
-            `Long-shot territory at ${odds}%. The ${vol} in volume suggests the faithful haven't given up. Stranger things have happened.`,
-            `Markets price this at just ${odds}%, but ${vol} remains in play. For true believers, these odds spell opportunity.`,
+            `Nobody saw this coming. Then it happened. ${odds}%.`,
+            `Upset for the ages. ${odds}% shocked the world.`,
+            `The long shot landed. ${odds}%. Believers rejoice.`,
+            `They said impossible. ${odds}% disagreed.`,
+            `The contrarians were right. ${odds}%. Take a bow.`,
+            `Miracle? Call it what you want. ${odds}%.`,
+            `The underdog bit back. ${odds}%. Stunning.`,
+            `Against all odds. Literally. ${odds}%.`,
+            `The faithful kept faith. ${odds}% rewarded them.`,
+            `Plot twist: ${odds}%. Nobody predicted this.`,
+            `The unthinkable became ${odds}% reality.`,
+            `Long odds, short memory. ${odds}% silences critics.`,
+            `They never gave up. ${odds}% proves it.`,
+            `The comeback story of the year: ${odds}%.`,
+            `Improbable became inevitable. ${odds}%.`,
+            `The market got it wrong. ${odds}% got it right.`,
+            `Stunning reversal. ${odds}%. Jaws on floor.`,
+            `David beat Goliath. ${odds}% is the headline.`,
+            `The biggest upset since... well, this: ${odds}%.`,
+            `Sometimes the long shot hits. ${odds}%. Today.`,
         ];
     }
 }
 
 function getFeatureTemplates(odds: number, vol: string): string[] {
     if (odds >= 85) {
+        // VICTORY STORY - Celebrate the win, document the carnage
         return [
-            `Markets have spoken with unusual clarity: ${odds}% odds suggest this outcome is virtually assured. The ${vol} in trading volume represents not speculation but conviction—institutional money doesn't bet on fantasies.
+            `It's done. ${odds}%. The bulls called it, the bulls won it, and ${vol} proved they weren't just talking.
 
-What makes this particularly noteworthy is the absence of meaningful dissent. At these levels, contrarian traders would typically emerge to challenge the consensus. Their silence speaks volumes.
+Make no mistake: this wasn't close. The contrarians got absolutely demolished. Anyone still holding the other side watched their positions evaporate like morning fog.
 
-The implications ripple outward. Adjacent markets are already pricing in the second-order effects. Smart money has moved from "will it happen" to "what happens next." For those still holding contrary positions, the mathematics are unforgiving.`,
+What happens next? The victory lap. The told-you-so tweets. The smart money already rotated to the next question while the losers were still processing their L.`,
 
-            `The prediction market has rendered its verdict: ${odds}% probability, backed by ${vol} in volume. At these levels, the question shifts from outcome to aftermath.
+            `They said it couldn't happen. Then it did. ${odds}% certainty, ${vol} in volume, and a whole lot of humble pie for the doubters.
 
-This kind of consensus is rare. Markets typically harbor skeptics, traders willing to bet against the crowd. Here, they've largely capitulated. The few remaining contrarian positions look less like informed dissent and more like wishful thinking.
+Here's the thing about prediction markets: they don't care about your narrative. They don't care about your credentials. They care about being right. And at ${odds}%, someone was very, very right.
 
-What happens next? The smart money is already rotating into adjacent questions—second-order effects, timing, magnitude. The primary outcome has been priced; the derivatives await.`,
+The aftermath is already playing out. Winners are collecting. Losers are coping. The next chapter starts now.`,
 
-            `At ${odds}% with ${vol} wagered, this market has moved past speculation into something approaching certainty. The remaining ${100 - odds}% represents not genuine doubt but the market's acknowledgment that nothing is ever truly guaranteed.
+            `${odds}%. Let that sink in. ${vol} flowed into this market, and the verdict came back unanimous.
 
-The trading pattern tells the story: early volatility, then convergence, then the kind of stability that comes when traders have exhausted their arguments. The consensus hardened, and here we are.
+The bears got crushed. Not "lost narrowly." Not "put up a good fight." Crushed. The kind of defeat that ends trading careers and spawns revenge trades.
 
-For market watchers, the action now lies elsewhere—in the ripple effects, the follow-on questions, the second-order implications that flow from this near-certain outcome.`,
+For the winners? Pop the champagne. For the losers? There's always the next market. Probably.`,
+
+            `History made. ${odds}% locked. ${vol} sealed it. The end.
+
+What we witnessed wasn't a market. It was a coronation. The favorite dominated from start to finish, and everyone who bet against the tide learned an expensive lesson.
+
+The story is over. The only question left: what comes next?`,
+
+            `The receipts are in: ${odds}%. Remember when they doubted? Remember the hot takes? The ${vol} remembers. The winners remember.
+
+This is what vindication looks like. Not a squeaker. Not a photo finish. A blowout. A statement. A market that said "we know" and then proved it.
+
+Somewhere, a trader who held from the beginning is very, very happy right now.`,
+
+            `Done. Dusted. Demolished. ${odds}% is the final score, ${vol} was the ammunition.
+
+The contrarian thesis died today. Not peacefully in its sleep—violently, publicly, expensively. The market showed no mercy because markets never do.
+
+On to the next one. The winners are already there.`,
+
+            `The math was never in doubt. ${odds}%. The ${vol} just made it official.
+
+Winners win. Losers learn. That's the market. That's always been the market. Today's lesson was taught at ${odds}% certainty.
+
+Class dismissed.`,
+
+            `${odds}% certainty. ${vol} in volume. Zero ambiguity.
+
+The betting thesis worked. The conviction paid off. The doubters got exactly what they deserved: a front-row seat to being wrong.
+
+Time to collect. Time to celebrate. Time to find the next opportunity.`,
+
+            `Absolute domination. ${odds}% from wire to wire. ${vol} backing the inevitable.
+
+This wasn't a contest—it was a statement. The market knew. The smart money knew. Now everyone knows.
+
+The victory lap begins. The post-mortems can wait.`,
+
+            `They fought the market. The market won. ${odds}% is the tombstone on the contrarian position.
+
+${vol} in volume. That's a lot of money on the right side, and a lot of pain on the wrong side. Markets are zero-sum. Today's sum was ${odds}%.
+
+Game over. New game loading.`,
+
+            `The impossible was always inevitable. ${odds}% confirms what the believers knew all along.
+
+${vol} didn't lie. The volume never lies. It just takes time for reality to catch up to what the money already understood.
+
+Victory. Complete. Undeniable.`,
+
+            `${odds}%. Say it again. Let it sink in for the doubters.
+
+The market spoke. Then it screamed. Then it engraved the verdict in ${vol} worth of certainty.
+
+There are no moral victories in prediction markets. Only winners and losers. Today made that very clear.`,
+
+            `From "maybe" to "definitely" to "${odds}% guaranteed." That's the trajectory. That's the story. That's ${vol} worth of conviction paying off.
+
+The holdouts surrendered. The skeptics converted. The market reached consensus the hard way—by being undeniably, provably right.
+
+Collect the winnings. Close the books. Start the next chapter.`,
+
+            `The thesis held. The bet paid. ${odds}% writes the ending that everyone saw coming but some refused to accept.
+
+${vol} in volume confirms this wasn't speculation—it was execution. The plan worked. The market delivered.
+
+Winners win. Rinse. Repeat.`,
+
+            `Certainty achieved. ${odds}%. ${vol}. Zero remaining doubt.
+
+This is what happens when the favorite is actually the favorite. When the odds are right. When the market gets it.
+
+The celebration is deserved. The analysis is over. On to tomorrow.`,
         ];
     } else if (odds >= 70) {
+        // STRONG WIN - Acknowledge the fight, celebrate the victory
         return [
-            `At ${odds}%, the market sees a clear favorite but leaves room for reversal. The ${vol} trading volume suggests serious conviction, though not the kind of lock-in that eliminates drama entirely.
+            `The favorite delivered. ${odds}% odds, ${vol} in volume, and a win that felt inevitable even when it wasn't certain.
 
-This is the zone where narratives get interesting. The leading outcome has momentum, but prediction markets have a way of humbling certainty. A single development—a headline, a data point, an unexpected twist—could shift the calculus.
+Here's the thing: ${100 - odds}% is still real probability. People lost money betting against this. But the market ultimately got it right, which is what markets do more often than not.
 
-Traders are positioned accordingly: confident enough to commit capital, cautious enough to maintain hedges. The next few developments will determine whether this edges toward certainty or swings back toward chaos.`,
+The win column fills up. The losers lick wounds. The eternal cycle continues.`,
 
-            `The odds stand at ${odds}%, with ${vol} in volume. Strong conviction, yes—but not overwhelming. This is the territory where favorites stumble and narratives reverse.
+            `${odds}% isn't a landslide, but it's a win. ${vol} backed the right horse, and tonight someone's counting profits while someone else deletes their trading app.
 
-What makes this positioning interesting is the residual uncertainty. The ${100 - odds}% minority bet isn't noise; it represents traders who see something the consensus might be missing. History suggests they're usually wrong. Usually.
+The margin matters less than the outcome. Right is right. Wrong is wrong. The market sorted it out.
 
-The path from here splits two ways: either the lead extends toward lock-in, or an unexpected development reshuffles the deck. Traders are watching closely for signals in either direction.`,
+Victory secured. Moving on.`,
 
-            `Markets favor this outcome at ${odds}%, backed by ${vol} in trading. The momentum is clear, though the game isn't over.
+            `Not a blowout. Not a nail-biter. Just a solid, respectable ${odds}% win backed by ${vol} in conviction.
 
-At this level, the favorite has established dominance but hasn't secured victory. The remaining probability mass represents genuine uncertainty—traders who believe the consensus is missing something, or simply hedging against the unexpected.
+The favorite held serve. No drama. No late-game heroics needed. Just steady execution from start to finish.
 
-The question now: does this drift toward certainty, or does something intervene? The volume suggests the market is paying attention, ready to move quickly when the next piece of information drops.`,
+This is what winning looks like when you do it right.`,
+
+            `${odds}% with ${vol} behind it. The thesis worked. Not perfectly, not overwhelmingly, but it worked.
+
+The contrarians put up a fight. Give them credit. But credit doesn't pay the bills—being right does. And ${odds}% is right enough.
+
+Collect. Recalibrate. Continue.`,
+
+            `The lead never collapsed. ${odds}% holds. ${vol} validates.
+
+There were moments of doubt—there always are. But the smart money stayed steady, and steady won the race.
+
+The reward for patience: being on the right side of ${odds}%.`,
+
+            `Conviction tested. Conviction proven. ${odds}% certainty earned the hard way.
+
+${vol} flowed through this market, and the consensus held. Not every bet pays, but this one did.
+
+The winners earned it. The losers learned from it. Markets working as designed.`,
+
+            `${odds}%. Clean win. ${vol} backed it.
+
+No asterisks. No controversy. Just the market doing what the market does—finding the right answer and rewarding those who found it first.
+
+Simple. Effective. Profitable.`,
+
+            `The favorite won like a favorite should: decisively enough at ${odds}%, with ${vol} to prove it wasn't a fluke.
+
+Some wins are ugly. This one was textbook. Read the market, trust the market, profit from the market.
+
+Another one in the books.`,
+
+            `${odds}% certainty after ${vol} in trading. The skeptics had their shot. They missed.
+
+Not every position needs to be a homerun. Singles win games too. This was a solid single—${odds}% odds, cash in pocket.
+
+Fundamentals work. Who knew.`,
+
+            `Momentum held. ${odds}% delivered. ${vol} celebrated.
+
+The path here wasn't always smooth, but the destination was right. That's what matters in markets. Being right at the end.
+
+Victory. Clean and clear.`,
+
+            `The ${100 - odds}% crew had hope. Hope doesn't trade well. ${odds}% does.
+
+${vol} in volume, and the majority was right. Not glamorous. Not dramatic. Just correct.
+
+The market rewarded the favorite. As it often does. As it should.`,
+
+            `From conviction to confirmation: ${odds}%. ${vol} tracked the journey.
+
+Betting favorites isn't exciting. But exciting doesn't pay rent. ${odds}% certainty does.
+
+The smart money stays boring. The smart money stays profitable.`,
+
+            `${odds}% odds materialized into ${odds}% reality. Funny how that works.
+
+${vol} bet on probability. Probability delivered. The math mathed.
+
+Winners: smiling. Losers: recalculating. Markets: functioning.`,
+
+            `Textbook win. ${odds}% expected. ${odds}% delivered. ${vol} validated.
+
+Not every market produces fireworks. Some just produce profits. This was the profitable kind.
+
+Solid. Steady. Successful.`,
+
+            `The thesis survived stress-testing. ${odds}% confirms. ${vol} endorses.
+
+Every market has doubters. This one had ${100 - odds}% worth. They were wrong. The majority was right.
+
+Tale as old as trading.`,
         ];
     } else if (odds >= 55) {
+        // NAIL-BITER - Photo finish drama, sweaty palms
         return [
-            `The margin is razor-thin at ${odds}%. With ${vol} wagered, this qualifies as one of the more contested outcomes on the board—exactly the kind of uncertainty that makes prediction markets worth watching.
+            `This one went to the wire. ${odds}% doesn't tell you about the heart palpitations, the 3 AM refreshes, the "please just end" prayers.
 
-Neither side can claim momentum. The trading pattern suggests a genuine disagreement about fundamentals, not just noise. When markets can't agree, it usually means the underlying situation is genuinely complex.
+${vol} wagered, and for most of that money, this was pure stress. The margin was nothing. The stakes were everything.
 
-What comes next matters more than usual here. A small shift in the fundamentals could cascade into a dramatic price movement. Traders are watching closely.`,
+Someone won by a hair. Someone lost by a hair. Same market, opposite realities.`,
 
-            `At ${odds}% with ${vol} in play, this market embodies genuine uncertainty. The slight edge exists, but it's narrow enough to evaporate with a single development.
+            `Photo finish. ${odds}% is the margin of victory, and ${vol} was riding on every percentage point.
 
-This is where prediction markets earn their keep—not in the obvious calls, but in the contested spaces where collective intelligence wrestles with complexity. The volume suggests real money is engaged with this question.
+The losers have a right to feel cheated. They don't, technically—the market was fair. But ${100 - odds}% isn't nothing. It's almost winning.
 
-For traders, the calculus is delicate: enough of an edge to warrant a position, but not enough to bet the farm. The next piece of information could clarify everything—or muddy the waters further.`,
+Almost doesn't pay though.`,
 
-            `Odds sit at ${odds}%, volume at ${vol}. In the taxonomy of prediction markets, this qualifies as "contested"—close enough that both sides can plausibly claim they see something the other doesn't.
+            `Nail. Biter. ${odds}% after ${vol} in trading and approximately infinity stress.
 
-The slight leader shouldn't get comfortable. At these levels, momentum shifts quickly. A headline, a data point, a rumor with legs—any could flip the script.
+This is the market at its most brutal: close enough to seem winnable for everyone, painful enough to hurt the losers deeply.
 
-Markets will likely remain volatile here until something breaks the deadlock. Until then, traders on both sides are holding their breath.`,
+The edge held. Barely. But barely counts.`,
+
+            `The slimmest of victories: ${odds}%. The traders who held this position deserve a spa day and a drink. Or several drinks.
+
+${vol} in volume, and none of it was comfortable money. Every tick mattered. Every update changed everything.
+
+The win column doesn't show the suffering. Only the result.`,
+
+            `Squeaker. ${odds}% victory. ${vol} in white-knuckle trading.
+
+The winners aren't celebrating so much as recovering. The losers aren't grieving so much as questioning everything.
+
+This is what "close" looks like in market terms.`,
+
+            `${odds}% is a win. It doesn't feel like a win. It feels like surviving a car crash. But it's a win.
+
+${vol} traded through this, and most of it was pure anxiety converted to dollar signs. The margin was thin. The money was real.
+
+Exhale. Collect. Never do this again. (Do it again.)`,
+
+            `Down to the wire doesn't capture it. ${odds}% after what felt like years of uncertainty.
+
+${vol} in volume, each dollar representing someone's conviction that they were right. Half of them were. Half of them weren't.
+
+The half that was right is very tired but very happy.`,
+
+            `The closest of calls: ${odds}%. ${vol} on the line.
+
+Prediction markets promise clarity. This one delivered clarity at the last possible second, after maximum possible drama.
+
+Someone's portfolio thanks the market gods tonight.`,
+
+            `Heart attack energy: ${odds}% win, ${vol} in trading, approximately zero calm traders.
+
+The edge existed. It was real. It held. That's three miracles if you were sweating this one.
+
+The win is in. The therapy bills are pending.`,
+
+            `${odds}% by the skin of their teeth. ${vol} worth of bets came down to almost nothing.
+
+This is gambling at its purest: conviction tested, nerves shattered, bank accounts rearranged by the narrowest of margins.
+
+The winners won. But everyone needs a nap.`,
+
+            `Photo finish resolved at ${odds}%. ${vol} exhales collectively.
+
+There are no style points in prediction markets. A win by one tick is a win. But this win aged several traders by several years.
+
+Profit is profit. Even when it costs you your youth.`,
+
+            `Barely. Just barely. ${odds}% barely.
+
+${vol} traded and the margin was thin enough to cut paper. One side claimed victory. The other side has legitimate grievances.
+
+Markets are cold. Markets don't care about "almost."`,
+
+            `${odds}% certainty after ${vol} in near-uncertainty. The turnaround that wasn't quite a turnaround, the collapse that wasn't quite a collapse.
+
+Somewhere between victory and defeat, this market found ${odds}%. Both sides feel robbed. Only one side is right.
+
+The result stands. The feelings don't matter.`,
+
+            `This close shouldn't be legal: ${odds}%. ${vol} in suffering.
+
+The traders who called this correctly deserve medals. The traders who missed it deserve therapy. Both groups need rest.
+
+On to the next coin flip disguised as a market.`,
+
+            `Edge: confirmed. Nerves: destroyed. Result: ${odds}%.
+
+${vol} in volume all came down to the thinnest of margins. This is prediction markets at their most sadistic.
+
+Win secured. Sanity pending.`,
         ];
     } else {
+        // UPSET - The impossible happened, celebrate the chaos
         return [
-            `At ${odds}%, this sits in underdog territory—improbable but not impossible. The ${vol} in volume suggests that even at these odds, some traders see an opportunity the market is missing.
+            `Nobody saw this coming. That's the honest truth. ${odds}% was the long-shot that landed, and ${vol} worth of contrarians just became very rich.
 
-Contrarian bets like this are where fortunes are made and lost. The implied probability leaves significant upside for those willing to bet against consensus. Of course, consensus is usually consensus for a reason.
+The consensus was wrong. Not a little wrong—fundamentally wrong. The smart money wasn't smart. The favorites weren't favored correctly.
 
-The next development could vindicate the minority position or confirm what the odds already suggest. Either way, this outcome remains on the radar—long odds have a way of shortening unexpectedly.`,
+This is the market humbling everyone who thought they understood it.`,
 
-            `The market prices this at ${odds}%—long odds by any measure. Yet the ${vol} in volume suggests this isn't a forgotten corner of the prediction landscape. Someone is paying attention.
+            `Upset for the ages: ${odds}%. Somewhere, a trader who everyone mocked is composing a very smug tweet.
 
-Contrarian positions at these levels are either prescient or delusional; time will tell which. The expected value math can work, if you're right often enough and position-size correctly.
+${vol} in volume, most of it on the wrong side. The majority got crushed. The minority got wealthy.
 
-What would it take to shift these odds? Something significant—a development that challenges the consensus narrative. Until then, this remains a watching brief for most traders.`,
+Prediction markets aren't predictable. That's... kind of the point.`,
 
-            `At ${odds}%, the market has spoken: unlikely. But the ${vol} still trading suggests the underdog thesis hasn't been fully abandoned.
+            `They said impossible. The market said ${odds}%. Someone owes someone an apology, and someone else owes someone a very large check.
 
-These are the bets that either look brilliant in hindsight or quietly expire worthless. The asymmetric payoff attracts a certain kind of trader—those who see angles the market has discounted too heavily.
+${vol} traded through this, and the contrarians—the crazy ones, the stubborn ones, the ones everyone dismissed—were right.
 
-The fundamental question: is the consensus right, or is it missing something? At these odds, you'd need strong conviction to take the other side. Some clearly have it.`,
+This is the stuff of trading legends.`,
+
+            `${odds}%. Read it again. The underdog won. The favorites lost. ${vol} changed hands in the wrong direction.
+
+There will be post-mortems. There will be finger-pointing. There will be questions about what everyone missed.
+
+For now, just appreciate the chaos.`,
+
+            `The long shot landed at ${odds}%. ${vol} in volume, most of it now belonging to the people nobody believed.
+
+This is why we have prediction markets: because sometimes the unlikely happens, and someone should profit from being right when everyone else was wrong.
+
+Tonight, those someones are celebrating.`,
+
+            `Plot twist: ${odds}%. The narrative collapsed. The thesis failed. The sure thing wasn't.
+
+${vol} in trading, and the market made a mockery of certainty. The traders who held the contrarian view through mockery and doubt are vindicated.
+
+Sometimes the crazy ones are just... right.`,
+
+            `The unthinkable became the inevitable at ${odds}%. ${vol} documents the carnage.
+
+This isn't supposed to happen. The odds said it wouldn't. But here we are, watching the underdog victory that will be studied in trading courses for years.
+
+Markets humble. That's what markets do.`,
+
+            `Stunning. ${odds}%. ${vol}. Everyone who was "certain" needs new certainty calibration.
+
+The favorite fell. The underdog rose. The prediction market reminded everyone that probability isn't destiny.
+
+The winners are few. The winners are ecstatic.`,
+
+            `The comeback story wrote itself at ${odds}%. ${vol} in volume, and the minority took the majority's lunch money.
+
+There were signs. There are always signs. Nobody read them. The market did, eventually, at the worst possible time for the favorites.
+
+Upsets make markets honest.`,
+
+            `${odds}% victory for the position nobody respected. ${vol} in volume that's now being redistributed from the confident to the contrarian.
+
+This is the trade that traders dream about: everyone against you, conviction unshaken, wallet eventually overflowing.
+
+Legendary status achieved.`,
+
+            `The impossible happened: ${odds}%. The ${vol} that flowed the wrong way is learning an expensive lesson about certainty.
+
+Prediction markets exist because the world is uncertain. Today, uncertainty won. Big time.
+
+The analysts are scrambling. The contrarians are celebrating.`,
+
+            `Against all odds—literally—the ${odds}% outcome materialized. ${vol} in bets went the wrong way for most.
+
+This is the market at its most humbling: a reminder that probability is not destiny, that consensus can be catastrophically wrong.
+
+Someone's yacht fund just got a major boost.`,
+
+            `The believers believed. ${odds}% vindicates them. ${vol} compensates them.
+
+When everyone zigs, someone has to zag. Today, the zaggers won. Won big. Won historically.
+
+The lesson: sometimes the minority is just correct.`,
+
+            `Miracle? Fluke? ${odds}% upset? Call it what you want. ${vol} calls it "wealth transfer to the prescient."
+
+The market got this wrong. Dramatically wrong. The people who were right are too busy counting money to gloat.
+
+Probably. They might gloat too.`,
+
+            `The thesis everyone dismissed: validated at ${odds}%. The contrarian play: paid at ${vol}.
+
+This is the trade you tell your grandchildren about. The one where you saw what nobody else saw and held while the world laughed.
+
+Last laugh: secured.`,
         ];
     }
 }
 
 function getLeadTemplates(odds: number, vol: string): string[] {
+    // LEAD STORY templates - Maximum drama, tabloid energy, front page stuff
     return [
-        `This stands as the defining question of the moment, and markets have rendered their verdict: ${odds}% odds on the leading outcome, backed by ${vol} in trading volume. In the arithmetic of prediction markets, that represents serious conviction—but not certainty.
+        `THEY DID IT. After months of doubt, weeks of drama, and ${vol} in trading volume, the verdict is in: ${odds}% certainty.
 
-The stakes extend well beyond the immediate question. Adjacent markets across multiple categories are already recalibrating based on the implied outcome here. When a market of this significance moves, it creates ripples throughout the ecosystem.
+The bulls won. The bears lost. The smart money got smarter. The dumb money got education. That's how markets work, and this market worked overtime.
 
-What makes this particularly compelling is the context. This isn't a question that emerged in isolation—it represents the convergence of multiple forces, each with their own timeline and logic. The current odds reflect the market's best synthesis of those factors.
+Let's be clear about what happened here: the consensus formed, the consensus held, and the consensus collected. Every trader who went against the grain is now explaining to someone—spouse, partner, mirror—why they were so sure about something so wrong.
 
-The trading pattern tells its own story. Early volatility has given way to more stable pricing, suggesting traders have largely settled on their positions. That stability could hold, or it could shatter with the next significant development.
+The implications cascade outward. Adjacent markets are already repricing. The second-order effects are materializing. The winners are rotating into new positions while the losers are still processing the L.
 
-For those tracking implications: the leading scenario would reshape expectations across related outcomes. Market participants are already positioning for the second-order effects, pricing in scenarios that assume this question resolves as currently expected.
+${odds}% doesn't leave much room for alternative narratives. The story wrote itself, and that story was: bet with the favorite, collect the profit, move on to the next opportunity.
 
-But prediction markets exist precisely because the future is uncertain. The ${odds}% figure leaves meaningful probability mass on alternative outcomes. In a world of black swans and fat tails, that uncertainty matters.
+For the historians: this is how a prediction market is supposed to work. Signal emerges from noise. Capital flows to conviction. Reality eventually agrees with probability.
 
-The developments ahead will test whether today's odds represent wisdom or hubris. Either way, this outcome will define the next chapter of the broader story.`,
+The celebration is deserved. The post-mortem is unnecessary. ${odds}% is ${odds}%. The end.`,
 
-        `Markets have placed their bets, and the numbers tell a compelling story: ${odds}% probability, ${vol} in volume. This is the question that has captured the prediction market's collective attention.
+        `NOBODY. SAW. THIS. COMING. Or maybe some did—the ${100 - odds}% who are now very, very wealthy.
 
-The significance extends beyond the immediate stakes. When a market of this magnitude moves, it sends signals throughout the ecosystem. Adjacent questions recalibrate. Correlations strengthen or break. The entire landscape shifts.
+${odds}% odds. ${vol} in volume. And a lesson in humility that the prediction market will remember for years.
 
-What brought us here? A convergence of forces—some gradual, some sudden—that crystallized into this single question. The odds represent thousands of traders synthesizing fragmentary information into a coherent probability estimate.
+The favorite collapsed. The underdog rose. The sure thing wasn't. Every analyst, every expert, every "obvious" take got obliterated by the only thing that matters: the outcome.
 
-The volume speaks to conviction. At ${vol}, this isn't casual speculation—it's serious capital expressing serious views. Money talks, and here it's speaking clearly.
+This is the upset that rewrites the rulebook. The contrarians—the stubborn, the crazy, the ones everyone dismissed—held their positions through mockery and margin calls. They held because they saw something. And what they saw was ${odds}%.
 
-Yet the remaining probability mass demands attention. The ${100 - odds}% isn't noise; it's the market's acknowledgment of genuine uncertainty. Prediction markets have been humbled before by outcomes they deemed unlikely.
+The carnage is extensive. The winners are few. The stories will be legendary.
 
-For those positioning around this outcome: the second-order effects are already in play. Smart money is thinking several moves ahead, pricing in scenarios that assume certain resolutions while hedging against surprises.
+There will be recriminations. There will be soul-searching. There will be a lot of traders asking themselves how they missed what now seems obvious in hindsight.
 
-The story isn't over. Markets will continue to process new information, adjusting odds in real-time as developments unfold. Today's price is just a snapshot—tomorrow's could look quite different.
+But hindsight is easy. Conviction is hard. The people who had conviction when it was unpopular are the people popping champagne tonight.
 
-Whatever the resolution, this question has earned its place at the center of the prediction market universe. The implications will echo long after the outcome is known.`,
+The market humbles everyone eventually. Today was eventually.`,
 
-        `At ${odds}% with ${vol} behind it, this market has established itself as the question of the moment. The numbers alone tell the story, but the implications run deeper.
+        `THE RECKONING ARRIVED. ${odds}%. ${vol}. And a whole lot of traders learning expensive lessons about certainty.
 
-Every prediction market has a center of gravity—the question that draws the most attention, generates the most volume, creates the most ripple effects. Right now, this is it.
+Here's the thing about prediction markets: they don't care about your credentials. They don't care about your analysis. They don't care about your certainty. They care about being right.
 
-The path to these odds wasn't linear. Early trading showed volatility, competing narratives jostling for supremacy. Gradually, a consensus emerged. The current price represents that consensus—imperfect, perhaps, but the best estimate available.
+At ${odds}%, someone was right. Very right. Expensively right for them, expensively wrong for everyone else.
 
-What makes this particularly significant is the connectivity. This outcome doesn't exist in isolation; it's woven into a web of related questions, adjacent markets, and downstream implications. A resolution here will cascade through the system.
+The path to this moment was messy. Early volatility. Competing narratives. The kind of chaos that makes prediction markets fascinating and terrifying in equal measure.
 
-The trading community has taken notice. The ${vol} in volume represents diverse actors—institutional players, retail traders, algorithmic systems—all converging on this question with their capital and their convictions.
+But chaos resolved into clarity, and clarity resolved into ${odds}%. That's the number. That's the verdict. That's the story.
 
-Yet prediction markets resist certainty. The ${100 - odds}% probability assigned to alternative outcomes isn't just mathematical formality—it's a genuine acknowledgment that surprises happen. The market has been wrong before.
+The winners earned their victory. Not through luck—through conviction held when conviction was uncomfortable. Through analysis that contradicted consensus. Through the courage to be wrong publicly until they were right.
 
-What comes next? The outcome will either vindicate the consensus or serve as another reminder that prediction markets, for all their wisdom, remain imperfect instruments for seeing the future.
+The losers? They learned. Markets are expensive teachers, but they're effective ones.
 
-Either way, the resolution will matter. This is the story to watch.`,
+Whatever comes next, this outcome will be remembered. ${odds}%. ${vol}. History.`,
+
+        `IT HAPPENED AT THE MOMENT NOBODY EXPECTED. One trade. Then another. Then the cascade.
+
+${odds}% certainty. ${vol} in volume. And a market that went from "maybe" to "definitely" in the time it takes to refresh a browser.
+
+The turning point will be analyzed for years. The traders who were positioned correctly will tell this story forever. The traders who weren't will remember it just as long, for very different reasons.
+
+This is prediction markets at their most dramatic: the moment when probability collapses into reality, when all the speculation ends, when someone wins and someone loses and the ledger balances.
+
+The stakes were enormous. ${vol} doesn't flow into casual questions. This was the question—the one everyone was watching, the one that would reshape everything downstream.
+
+And now it's answered. ${odds}%. Final. Irrevocable.
+
+The implications ripple outward. Other markets adjust. Positions get closed. New opportunities emerge from the ashes of old certainties.
+
+This is the cycle. This is always the cycle. Today's resolution becomes tomorrow's baseline becomes next week's ancient history.
+
+But right now? Right now, ${odds}% is everything.`,
+
+        `WINNERS ON ONE SIDE. LOSERS ON THE OTHER. ${odds}% IN BETWEEN.
+
+The market has spoken, and it spoke in ${vol} worth of conviction. There's no ambiguity here. No room for interpretation. Just a number and its consequences.
+
+Let the record show: on this day, at this moment, the prediction market rendered its verdict. ${odds}% probability materialized into 100% outcome.
+
+The winners know who they are. They're the ones who saw the trend before it was obvious, who held the position when it was painful, who trusted their analysis over the crowd's consensus.
+
+The losers know who they are too. They're the ones who'll spend the next week running counterfactuals, asking "what if," wondering whether there was a signal they missed.
+
+Spoiler: there probably was. There usually is. The market usually knows before we do—that's why it's the market.
+
+${vol} is a lot of money. It represents a lot of conviction, a lot of analysis, a lot of sleepless nights and stress-refreshing browsers. All of it resolved into ${odds}%.
+
+The story is over. The next story begins. The market never stops.`,
+
+        `LET THE RECORD SHOW: on this day, it was settled. ${odds}% certainty. ${vol} in volume. Zero remaining questions.
+
+The debate is over. The speculation ends. The "what-ifs" become "what-wases." This is how prediction markets close chapters—decisively, expensively, permanently.
+
+The path here was anything but certain. There were moments of doubt. Moments when the other side had momentum. Moments when ${odds}% seemed like a fantasy.
+
+But the fantasy became reality. The probability became outcome. The market did what markets do: found the truth and made people pay for being wrong about it.
+
+The winners earned this. Through research, through conviction, through the courage to put capital behind their beliefs when those beliefs were unpopular.
+
+The losers earned this too, in a different way. Every wrong position is a lesson. Every loss is tuition. The market educates everyone eventually.
+
+${odds}%. ${vol}. These numbers will echo through trading floors and Discord servers and group chats. They'll become shorthand for this moment—the moment when everyone learned who was right.
+
+History recorded. Chapter closed. Next page loading.`,
+
+        `THE DUST SETTLES. THE NUMBERS ARE FINAL. ${odds}% wins. ${vol} changes hands.
+
+This is what resolution looks like in prediction markets: not a whisper, but a verdict. Not a suggestion, but a statement. The outcome is in, and the outcome doesn't care about your feelings.
+
+For the winners, this is validation. Every doubter silenced. Every skeptic refuted. Every moment of uncertainty justified by the only metric that matters: being right.
+
+For the losers, this is education. Expensive education. The kind that sticks because it costs something. Next time—if there is a next time—the analysis will be sharper.
+
+The market functioned. That's the meta-story. Thousands of traders, millions of data points, ${vol} in capital, all synthesized into a single probability that turned out to be... right.
+
+That's not nothing. In a world of noise and uncertainty, the market found signal. The crowd, in its collective wisdom, got this one correct.
+
+${odds}% is the headline. But the real story is the system that produced it: chaotic, competitive, occasionally cruel, but ultimately effective at finding truth.
+
+The truth is in. The market moves on. The cycle continues.`,
+
+        `HISTORY MADE. No asterisks. No qualifications. Just ${odds}% certainty and ${vol} in proof.
+
+Some outcomes are ambiguous. This one isn't. The market delivered a verdict so clear it might as well have been written in neon: THIS HAPPENED.
+
+The winners are celebrating. The losers are coping. The analysts are already writing post-mortems that will be ignored until the next time everyone gets it wrong.
+
+What made this outcome special wasn't just the probability—it was the journey. The volatility. The competing narratives. The moments when it could have gone either way.
+
+But it went this way. ${odds}% this way. And now that's the only reality that matters.
+
+${vol} in trading volume represents conviction at scale. Not retail gamblers—serious capital making serious statements about serious questions. The market weight behind this number is undeniable.
+
+For prediction market enthusiasts, this is validation. The system works. Not perfectly—it never works perfectly—but well enough to find truth when truth is findable.
+
+For everyone else? This is a reminder that the future isn't as uncertain as it feels. Sometimes the smart money is actually smart. Sometimes probability is destiny.
+
+Today, ${odds}% was destiny.`,
+
+        `THE IMPOSSIBLE WAS ALWAYS INEVITABLE. We just couldn't see it until ${odds}% made it undeniable.
+
+${vol} in volume. Thousands of traders. Millions of data points. All converging on a single outcome that, in hindsight, was obvious. It's always obvious in hindsight.
+
+The story of this market is the story of consensus forming in real-time. Early chaos giving way to emerging pattern. Emerging pattern crystallizing into conviction. Conviction becoming ${odds}%.
+
+The losers had their thesis. It was plausible. It was reasoned. It was wrong. The market doesn't grade on effort—it grades on outcome. And the outcome is in.
+
+The winners had their thesis too. It was also plausible. Also reasoned. But it was right, and right is the only thing that matters when the ledger closes.
+
+This is the brutal beauty of prediction markets: no participation trophies. No moral victories. Just winners and losers, separated by the thinnest of margins or the widest of chasms.
+
+${odds}% is a chasm. One side is celebrating. The other side is recalibrating.
+
+The market never stops. But this moment—${odds}%, ${vol}, history—deserves a pause. A recognition. A record for the ages.
+
+Done.`,
+
+        `THE VERDICT CAME DOWN LIKE A HAMMER. ${odds}%. ${vol}. Devastation for some. Vindication for others.
+
+Markets exist to answer questions. This market answered its question with prejudice. No ambiguity. No "basically" or "probably" or "it depends." Just cold, hard, ${odds}%.
+
+The traders who called this—who saw it coming when others scoffed—are the protagonists of tonight's story. They read the signals. They trusted their analysis. They held the position.
+
+The traders who missed it are the cautionary tale. Not because they were stupid—they weren't—but because they were wrong. And wrong is wrong, regardless of how sophisticated the reasoning behind it.
+
+${vol} is real money. When you're on the right side of ${vol}, life is good. When you're on the wrong side, life is expensive. The market creates these realities without sentiment or mercy.
+
+The implications cascade. Other questions get repriced. Correlations strengthen or break. The entire prediction market ecosystem absorbs this ${odds}% and adjusts.
+
+But in this moment, before the next question becomes urgent, pause to appreciate what happened here: the future got less uncertain. A question got answered. The market worked.
+
+${odds}%. Remember it.`,
     ];
 }
 
@@ -358,9 +849,15 @@ export class ArticleWriterAgent implements Agent<ArticleWriterInput, ArticleWrit
                 return `[${globalIdx}] ${s.text}`;
             }).join('\n\n---\n\n');
 
-            const batchPrompt = `You are a senior investigative journalist at "The Polymarket Times" — a prestigious newspaper that covers prediction markets as breaking news.
+            const batchPrompt = `You are writing for "The Polymarket Times" — a TABLOID from TOMORROW.
 
-Write a compelling news article for EACH story below.
+═══════════════════════════════════════════════════════════
+CRITICAL: YOU ARE A TIME TRAVELER FROM TOMORROW
+═══════════════════════════════════════════════════════════
+Write as if the likely outcome ALREADY HAPPENED:
+- Markets >70%: Declare VICTORY. Past tense. "The bulls won."
+- Markets 50-70%: NAIL-BITER energy. "Down to the wire."
+- Markets <50%: STUNNING UPSET. "Nobody saw this coming."
 
 ═══════════════════════════════════════════════════════════
 STORIES TO COVER:
@@ -368,60 +865,58 @@ STORIES TO COVER:
 ${batchInput}
 
 ═══════════════════════════════════════════════════════════
-ARTICLE STRUCTURE (CLAIM → EVIDENCE → IMPLICATION):
+ARTICLE STRUCTURE (VERDICT → PROOF → CONSEQUENCES):
 ═══════════════════════════════════════════════════════════
 
-Every article must follow this structure:
+1. **VERDICT** (First sentence)
+   Declare what happened. Past tense. Confident.
+   - BAD: "Markets are pricing Bitcoin at 75%..."
+   - GOOD: "Bitcoin smashed through $100K. The bulls were right. The bears got crushed."
 
-1. **CLAIM** (First sentence)
-   What's happening? State the news declaratively.
-   - BAD: "Markets are pricing Bitcoin..."
-   - GOOD: "Bitcoin stands on the precipice of $100,000, with traders pricing a 75% chance of breakout by month's end."
+2. **PROOF** (2-3 sentences)
+   The numbers that seal it. Drama, not analysis.
+   - "The odds locked at 85%. The volume screamed $12M."
+   - "Nobody believed. Then everyone believed. Then it happened."
 
-2. **EVIDENCE** (2-3 sentences)
-   The numbers that prove it. Be specific.
-   - Include: The odds, the direction, the volume
-   - Translate odds into stakes: "with $12M wagered" or "institutional money piling in"
-
-3. **IMPLICATION** (1-2 sentences)
-   Why should the reader care? What happens next?
-   - If YES: What changes? Who wins/loses?
-   - If NO: What's the alternative scenario?
-
-═══════════════════════════════════════════════════════════
-ODDS TRANSLATION GUIDE:
-═══════════════════════════════════════════════════════════
-- 90%+ → "all but certain", "inevitable", "foregone conclusion"
-- 80-90% → "highly likely", "strong momentum", "commanding lead"
-- 70-80% → "favored", "on track", "positioned to"
-- 50-70% → "edge", "slight advantage", "contested", "too close to call"
-- 30-50% → "uphill battle", "fighting chance", "mounting comeback"
-- <30% → "long odds", "slim chance", "would need dramatic reversal"
+3. **CONSEQUENCES** (1-2 sentences)
+   Winners and losers. Who's celebrating? Who's crying?
+   - "The doubters owe apologies. The believers deserve champagne."
+   - "Somewhere, a trader who held through the chaos is very, very rich."
 
 ═══════════════════════════════════════════════════════════
 LAYOUT-SPECIFIC INSTRUCTIONS:
 ═══════════════════════════════════════════════════════════
-- **LEAD_STORY** (250 words): Voice of God. This is the story everyone's talking about.
-  Synthesize stakes, history, key players, and global implications.
+- **LEAD_STORY** (250 words): FRONT PAGE ENERGY. Maximum drama.
+  "THEY DID IT." "IT'S OVER." "HISTORY MADE."
 
-- **FEATURE** (120 words): Analytical depth. Connect the dots.
-  Explain WHY this matters, not just WHAT's happening.
+- **FEATURE** (120 words): The story behind the story.
+  Winners and losers. Drama and vindication.
 
-- **BRIEF** (40 words): Ultra-punchy. Just the news in 2-3 sentences.
-  CLAIM + EVIDENCE only. Skip implications - readers can infer.
+- **BRIEF** (40 words): Mic drop. 2-3 punchy sentences.
+  "Done. Finished. 85% locked it in."
 
 ═══════════════════════════════════════════════════════════
-TONE GUIDE:
+TONE: NEW YORK POST MEETS WSB
 ═══════════════════════════════════════════════════════════
-The Economist meets Matt Levine.
+- Punchy, not ponderous
+- Dramatic, not detached
+- Opinionated, not neutral
+- Emotional, not clinical
+- Winners celebrate, losers weep
 
-- Authoritative, not breathless
-- Witty, not trying too hard
-- Sardonic, not cynical
-- Informed, not pedantic
+Short sentences. Staccato rhythm. Exclamation points allowed!
 
-BANNED WORDS: "very", "really", "basically", "just", "actually", "so yeah"
-PREFERRED: "The ledger suggests", "Markets imply", "Traders are pricing in", "The calculus shifts"
+GOOD: "It's over. The bulls won. $12M screamed it from the rooftops."
+BAD: "Markets have rendered their verdict with unusual clarity..."
+
+GOOD: "Nobody saw this coming. Then it happened."
+BAD: "The outcome appears to have materialized contrary to expectations..."
+
+BANNED: "Markets have spoken", "The consensus suggests", "Traders are pricing in",
+        "The calculus shifts", "The ledger suggests", "very", "really", "basically"
+
+PREFERRED: "It's done.", "The bulls won.", "History made.", "They did it.",
+           "Nobody saw this coming.", "The doubters got crushed.", "Game over."
 
 ═══════════════════════════════════════════════════════════
 RESPOND WITH JSON ONLY:

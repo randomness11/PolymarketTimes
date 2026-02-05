@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 
 interface HeaderProps {
     cryptoPrices?: {
@@ -33,7 +34,12 @@ export default function Header({ cryptoPrices, timestamp }: HeaderProps) {
         <header className={`flex flex-col border-b-4 border-black mb-8 transition-all duration-300 z-50 bg-[#f4f1ea] ${isScrolled ? 'sticky top-0 shadow-xl' : 'relative'}`}>
             {/* Top Meta Bar */}
             <div className={`flex justify-between items-center py-1 border-b border-black text-xs font-bold font-serif tracking-widest px-2 transition-all duration-300 ${isScrolled ? 'py-0.5 text-[10px]' : ''}`}>
-                <div>VOL. CXXVII... No. 42,109</div>
+                <div className="flex items-center gap-3">
+                    <span>VOL. CXXVII... No. 42,109</span>
+                    <Link href="/archives" className="hidden sm:inline hover:underline">
+                        ARCHIVES
+                    </Link>
+                </div>
                 <div>NEW YORK, {currentDate}</div>
                 <div>PRICE ONE DOLLAR ($1.00)</div>
             </div>
@@ -111,7 +117,7 @@ export default function Header({ cryptoPrices, timestamp }: HeaderProps) {
                     <div className={`text-[9px] uppercase tracking-[0.2em] mb-2 font-sans text-gray-500 transition-all duration-300 ${isScrolled ? 'h-0 overflow-hidden mb-0 opacity-0' : 'h-auto opacity-100'}`}>
                         "All the news that's fit to bet on"
                     </div>
-                    <h1 className={`font-blackletter text-black leading-tight tracking-tight mb-2 transition-all duration-300 ${isScrolled ? 'text-4xl md:text-5xl mb-0' : 'text-6xl md:text-8xl'}`}>
+                    <h1 className={`font-blackletter text-black leading-tight tracking-tight mb-2 transition-all duration-300 ${isScrolled ? 'text-4xl md:text-5xl mb-0' : 'text-4xl sm:text-6xl md:text-8xl'}`}>
                         The Polymarket Times
                     </h1>
                     <div className={`flex justify-center items-center gap-4 transition-all duration-300 ${isScrolled ? 'h-0 overflow-hidden opacity-0' : 'h-auto opacity-100'}`}>
