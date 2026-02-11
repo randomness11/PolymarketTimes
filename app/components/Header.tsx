@@ -47,66 +47,48 @@ export default function Header({ cryptoPrices, timestamp }: HeaderProps) {
             {/* Main Masthead Area */}
             <div className={`relative flex justify-between items-center px-4 transition-all duration-300 ${isScrolled ? 'py-2' : 'py-6 md:py-8'}`}>
 
-                {/* Left Ear - Polydupe Ad - PERFECTED VINTAGE */}
+                {/* Left Ear - Advertising Placeholder */}
                 <a
-                    href="https://bit.ly/49Pc0yo"
+                    href="https://x.com/ankitkr0"
                     target="_blank"
                     rel="noopener noreferrer"
                     className={`hidden md:block w-52 transition-all duration-300 group relative ${isScrolled ? 'opacity-0 w-0 p-0 overflow-hidden' : 'opacity-100'}`}
                 >
-                    {/* Animated Manicule */}
-                    <div className="absolute -left-6 top-1/2 -translate-y-1/2 z-20 animate-[bounce_1s_infinite] hidden lg:block text-2xl text-black group-hover:text-black">
-                        ☞
-                    </div>
-
                     {/* Outer Coupon Container */}
                     <div className="border-[3px] border-black border-dashed group-hover:border-[#f4f1ea] p-1 bg-[#f4f1ea] group-hover:bg-black transition-all duration-300 relative overflow-hidden">
 
                         {/* Inner Container */}
                         <div className="relative z-10 border-2 border-black group-hover:border-[#f4f1ea] p-2 transition-all duration-300">
 
-                            {/* Sponsored Badge */}
-                            <div className="flex items-center justify-center gap-1 mb-2">
-                                <span className="text-[8px] uppercase tracking-[0.2em] font-serif font-bold text-black group-hover:text-[#f4f1ea] px-1 transition-all duration-300 animate-pulse">
-                                    ★ Sponsored ★
-                                </span>
-                            </div>
-
-                            {/* Logo - Seamless Ink Style */}
-                            <div className="flex justify-center mb-2">
-                                <div className="p-1 rounded-sm">
-                                    <img
-                                        src="/polydupe-clean.png"
-                                        alt="Polydupe"
-                                        // Brightness bumps the grey smudge to white. Contrast pushes it to pure white. 
-                                        // Multiply removes white (Default). 
-                                        // Hover: Invert turns black logo to white. Screen removes black background.
-                                        className="w-12 h-12 filter grayscale brightness-125 contrast-[200%] mix-blend-multiply group-hover:invert group-hover:mix-blend-screen transition-all duration-300"
-                                        style={{ imageRendering: 'pixelated' }}
-                                    />
-                                </div>
+                            {/* Decorative Ornament */}
+                            <div className="text-center text-black group-hover:text-[#f4f1ea] text-lg mb-1 transition-all duration-300">
+                                ✦
                             </div>
 
                             {/* Headline */}
-                            <div className="text-center mb-1">
-                                <div className="text-[11px] font-black uppercase tracking-wider text-black group-hover:text-[#f4f1ea] leading-tight transition-all duration-300">
-                                    Copy Top Polymarket
-                                </div>
-                                <div className="text-[11px] font-black uppercase tracking-wider text-black group-hover:text-[#f4f1ea] leading-tight transition-all duration-300">
-                                    Traders for <span className="underline decoration-wavy decoration-black group-hover:decoration-[#f4f1ea]">Free</span>
+                            <div className="text-center mb-2">
+                                <div className="text-[13px] font-black uppercase tracking-wider text-black group-hover:text-[#f4f1ea] leading-tight transition-all duration-300">
+                                    Your Brand Here
                                 </div>
                             </div>
 
-                            {/* Value Prop Highlight */}
+                            {/* Description */}
+                            <div className="text-center mb-2">
+                                <div className="text-[9px] font-serif italic text-black group-hover:text-[#f4f1ea] leading-snug transition-all duration-300">
+                                    Reach thousands of prediction market enthusiasts daily
+                                </div>
+                            </div>
+
+                            {/* Price */}
                             <div className="bg-black group-hover:bg-[#f4f1ea] mx-1 my-2 py-1 px-1 transition-all duration-300">
-                                <div className="text-[9px] font-bold text-center text-[#f4f1ea] group-hover:text-black tracking-wide transition-all duration-300">
-                                    Only Pay Fees If You Win
+                                <div className="text-[10px] font-bold text-center text-[#f4f1ea] group-hover:text-black tracking-wide transition-all duration-300">
+                                    From $2,000 / month
                                 </div>
                             </div>
 
-                            {/* CTA Button */}
+                            {/* CTA */}
                             <div className="bg-black group-hover:bg-[#f4f1ea] text-[#f4f1ea] group-hover:text-black text-[10px] font-black uppercase tracking-widest py-1.5 px-2 text-center border-2 border-transparent shadow-[2px_2px_0px_rgba(0,0,0,0.2)] group-hover:shadow-[2px_2px_0px_rgba(255,255,255,0.2)] transition-all duration-300">
-                                VISIT POLYDUPE.COM ☞
+                                DM @ankitkr0 on 𝕏 ☞
                             </div>
                         </div>
                     </div>
